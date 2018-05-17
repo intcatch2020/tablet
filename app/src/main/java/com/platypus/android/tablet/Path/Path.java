@@ -4,6 +4,9 @@ import java.util.ArrayList;
 
 import com.mapbox.mapboxsdk.geometry.LatLng;
 
+/**
+ * A sequence of latitude/longitude locations referred to as waypoints
+ */
 public class Path
 {
 		int current_index = 0;

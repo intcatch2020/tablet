@@ -31,14 +31,13 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Scanner;
 
-/**
- * Created by jason on 11/16/17.
- *
- * Save and load paths (sequences of latitude, longitude values).
- * Uses JSON objects and JSONArray objects
- *
- */
 
+/**
+ * Contains the functionality for saving and loading waypoints
+ * <p>
+ *     Uses JSON objects and JSONArray objects
+ * </p>
+ */
 class SavedWaypointsStuff
 {
 		private String logTag = "SavedWaypointsStuff";

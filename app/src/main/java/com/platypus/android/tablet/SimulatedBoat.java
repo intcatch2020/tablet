@@ -27,11 +27,8 @@ import javax.measure.unit.NonSI;
 import javax.measure.unit.SI;
 
 /**
- * Created by jason on 7/12/17.
- *
- * A rough dynamics boat simulation.
+ * A simulated boat, relying on a simple physics simulation.
  */
-
 public class SimulatedBoat extends Boat
 {
 		InetSocketAddress addr;

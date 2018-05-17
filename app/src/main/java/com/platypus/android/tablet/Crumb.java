@@ -4,9 +4,8 @@ import org.jscience.geography.coordinates.UTM;
 
 
 /**
- * Created by jason on 6/7/17.
+ * A breadcrumb is a location, a unique identifier, and some data relevant to A* path planning
  */
-
 public class Crumb
 {
 		// Instance fields

@@ -1,33 +1,21 @@
 package com.platypus.android.tablet;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.Scanner;
 
 import javax.measure.unit.NonSI;
-import javax.measure.unit.SI;
 
 import org.jscience.geography.coordinates.LatLong;
 import org.jscience.geography.coordinates.UTM;
 import org.jscience.geography.coordinates.crs.ReferenceEllipsoid;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.json.JSONTokener;
 
-import com.google.gson.Gson;
 import com.mapbox.mapboxsdk.Mapbox;
 import com.mapbox.mapboxsdk.annotations.MarkerView;
 import com.mapbox.mapboxsdk.annotations.MarkerViewOptions;
@@ -37,7 +25,6 @@ import com.mapbox.mapboxsdk.camera.CameraPosition;
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
 import com.mapbox.mapboxsdk.constants.Style;
 import com.mapbox.mapboxsdk.geometry.LatLng;
-import com.mapbox.mapboxsdk.geometry.ILatLng;
 import com.mapbox.mapboxsdk.annotations.Marker;
 import com.mapbox.mapboxsdk.annotations.MarkerOptions;
 import com.mapbox.mapboxsdk.annotations.Icon;
@@ -69,7 +56,6 @@ import android.support.annotation.LayoutRes;
 import android.support.annotation.NonNull;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.ContextCompat;
-import android.util.JsonReader;
 import android.view.MenuItem;
 import android.view.View;
 
@@ -79,7 +65,6 @@ import com.platypus.android.tablet.Path.Region;
 import com.platypus.crw.CrwNetworkUtils;
 import com.platypus.crw.VehicleServer;
 import com.platypus.crw.data.SensorData;
-import com.platypus.crw.data.Pose3D;
 
 import android.app.Activity;
 import android.content.Context;
@@ -97,7 +82,6 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.EditText;
-import android.widget.ListView;
 import android.widget.PopupMenu;
 import android.widget.RadioButton;
 import android.widget.RelativeLayout;
@@ -105,37 +89,94 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.platypus.crw.data.Utm;
-import com.platypus.crw.data.UtmPose;
-
 import android.app.Dialog;
 
 import android.view.View.OnClickListener;
 
 import com.platypus.android.tablet.Joystick.*;
 
+
+/**
+ * Android Activity that contains most of the GUI functionality
+ *
+ * @author jason blum
+ */
 public class TeleOpPanel extends Activity implements SensorEventListener
 {
+		/**
+		 * HashMap from boat name to Boat object instances.
+		 */
 		HashMap<String, Boat> boats_map = new HashMap<>();
+
+		/**
+		 * HashMap from boat name to MapBox MarkerViewOptions instances.
+		 * Each instance represents a boat's arrow icon.
+		 */
 		HashMap<String, MarkerViewOptions> boat_markers_map = new HashMap<>();
+
+		/**
+		 * HashMap from boat name to MapBox MarkerViewOptions instances.
+		 * Each instance represents a boat's home icon.
+		 */
 		HashMap<String, MarkerViewOptions> home_markers_map = new HashMap<>();
+
+		/**
+		 * HashMap from boat name to Path object instances.
+		 */
 		HashMap<String, Path> path_map = new HashMap<>();
+
+		/**
+		 * HashMap from boat name to an ArrayList of MapBox Polyline object instances.
+		 * Each list contains the polylines that are used to draw the black outline of a path between waypoints.
+		 */
 		HashMap<String, ArrayList<Polyline>> waypath_outline_map = new HashMap<>();
+
+		/**
+		 * HashMap from boat name to an ArrayList of MapBox Polyline object instances.
+		 * Each list contains the polylines that are used to draw the colored top layer of a path between waypoints.
+		 */
 		HashMap<String, ArrayList<Polyline>> waypath_top_map = new HashMap<>();
 		//HashMap<String, Polyline> boat_to_wp_line_map = new HashMap<>();
+
+		/**
+		 * HashMap from boat name to an integer, tracking the index of the current waypoint in the list of waypoints.
+		 */
 		HashMap<String, Integer> current_wp_index_map = new HashMap<>();
+
+		/**
+		 * HashMap from boat name to an integer, tracking the index of the previously completed waypoint in the list of waypoints.
+		 */
 		HashMap<String, Integer> old_wp_index_map = new HashMap<>();
+
+		/**
+		 * HashMap from boat name to an ArrayList of MapBox Markers.
+		 * Each marker represents the location of a Crumb object instance.
+		 */
 		HashMap<String, ArrayList<Marker>> crumb_markers_map = new HashMap<>();
 
 		// TODO: key: boat name, value: {key: sensor's (channel, type) hash, value: Mapbox marker objects}
 		HashMap<String, HashMap<Integer, ArrayList<Marker>>> sensordata_markers_map = new HashMap<>();
 
+		/**
+		 * HashMap from a Marker's title to that Marker's PlatypusMarkerTypes enum value.
+		 */
 		HashMap<String, PlatypusMarkerTypes> marker_types_map = new HashMap<>();
 
 		// TODO: if I'm using a recycler view for the APM GUI, that has a List of views
 		// TODO: Doesn't this key: id, value: APM hashmap have to align with that list?
+		/**
+		 * HashMap from a unique id integer to an AutonomousPredicateMessage object
+		 */
 		HashMap<Integer, AutonomousPredicateMessage> ap_messages_map = new HashMap<>();
 
+		/**
+		 * Create a new AutonomousPredicateMessage object.
+		 * @param name  the name of the behavior
+		 * @param action  the action to be performed once the trigger is fulfilled
+		 * @param trigger  the boolean sentence that is evaluated as true or false
+		 * @param interval  the milliseconds between each evaluation of the trigger
+		 * @param ends  True if the trigger is abandoned after being evaluated as True once
+		 */
 		void newAutonomousPredicateMessage(String name, String action,
 		                                   String trigger, long interval, boolean ends)
 		{
@@ -146,6 +187,9 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 				}
 		}
 
+		/**
+		 * Send all currently defined AutonomousPredicateMessage objects to the currently selected boat
+		 */
 		void sendAllAPMessages()
 		{
 				for (AutonomousPredicateMessage apm : ap_messages_map.values())
@@ -205,7 +249,10 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 		Spinner available_boats_spinner = null;
 		ColorfulSpinnerAdapter available_boats_spinner_adapter = null;
 
-		Handler uiHandler = new Handler(Looper.getMainLooper()); // anything post to this is run on the main GUI thread
+		/**
+		 * An Android Handler, used to post Runnable tasks on the main GUI thread
+		 */
+		Handler uiHandler = new Handler(Looper.getMainLooper());
 
 		double currentTransectDist = 20;
 
@@ -240,11 +287,30 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 
 		double battery_voltage = 0.0;
 
+		/**
+		 * ArrayList of MapBox LatLng objects representing the waypoints currently on the map
+		 */
 		ArrayList<LatLng> waypoint_list = new ArrayList<LatLng>(); // waypoints selected by the user
+
+		/**
+		 * ArrayList of MapBox Marker objects representing the waypoints currently on the map
+		 */
 		ArrayList<Marker> marker_list = new ArrayList<>(); // markers associated with those waypoints
+
+		/**
+		 * ArrayList of MapBox Polyline objects acting as the black outline for the lines that display the unowned path
+		 */
 		ArrayList<Polyline> outline_list = new ArrayList<>(); // lines generated by user input but not yet assigned to any boat
+
+		/**
+		 * ArrayList of MapBox Polyline objects acting as the white interior for the lines that display the unowned path
+		 */
 		ArrayList<Polyline> topline_list = new ArrayList<>(); // lines generated by user input but not yet assigned to any boat
-		Path unowned_path = new Path(); // a path generated by user input but not yet assigned to any boat
+
+		/**
+		 * The Path object that represents the unowned path, a path generated by user input but not yet assigned to any boat
+		 */
+		Path unowned_path = new Path();
     
 		final Object _wpGraphicsLock = new Object();
 
@@ -259,8 +325,23 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 		Uri alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
 
 		int boat_color_count = 0;
+
+		/**
+		 * A nested HashMap that holds colors for the boats and their corresponding path lines
+		 */
 		Map<Integer, Map<String, Integer>> color_map = new HashMap<>();
 
+		/**
+		 * Generate a color-coded icon by applying a color filter to a white icon.
+		 * <p>
+		 * Instead of including a separate icon image for every color,
+		 * applying a multiplicative color filter to a white icon
+		 * will generate the same result.
+		 * </p>
+		 * @param drawable The base white icon Drawable object
+		 * @param color The desired color in integer form
+		 * @return A MapBox API Icon object with the desired color
+		 */
 		public Icon colorIconFromDrawable(Drawable drawable, Integer color)
 		{
 				if (color != null)
@@ -268,14 +349,19 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 						PorterDuff.Mode mMode = PorterDuff.Mode.MULTIPLY;
 						drawable.setColorFilter(color, mMode);
 				}
-				// https://github.com/mapbox/mapbox-gl-native/issues/8185
-				Bitmap bitmap = Bitmap.createBitmap(drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
+				Bitmap bitmap = Bitmap.createBitmap(
+								drawable.getIntrinsicWidth(),
+								drawable.getIntrinsicHeight(),
+								Bitmap.Config.ARGB_8888);
 				Canvas canvas = new Canvas(bitmap);
 				drawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
 				drawable.draw(canvas);
 				return mIconFactory.fromBitmap(bitmap);
 		}
 
+		/**
+		 * The ArrayAdapter object responsible for color-coding the boat selection pulldown menu options
+		 */
 		class ColorfulSpinnerAdapter extends ArrayAdapter<String>
 		{
 				public ColorfulSpinnerAdapter(@NonNull Context context, @LayoutRes int resource)
@@ -301,6 +387,10 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 				// TODO: don't rely on a hardcoded color circuit
 		}
 
+		/**
+		 * Instantiate a new Boat object and generate a colored arrow Icon for it.
+		 * @param boat_name The name of the boat. Used as a key in several HashMaps.
+		 */
 		void startNewBoat(final String boat_name)
 		{
 				// generate Boat object and put it into the boat_map
@@ -318,16 +408,13 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 						newBoat = new SimulatedBoat(boat_name, initial_simulated_utm);
 				}
 
-
 				available_boats_spinner_adapter.add(boat_name);
 				available_boats_spinner_adapter.notifyDataSetChanged();
 
 				// marker view - automatically generate colored arrow
 				Drawable arrow = getResources().getDrawable(R.drawable.arrow_white, null);
-				PorterDuff.Mode mMode = PorterDuff.Mode.MULTIPLY;
 				int boat_color = color_map.get(boat_color_count).get("boat");
 				int line_color = color_map.get(boat_color_count).get("line");
-				//arrow.setColorFilter(boat_color, mMode);
 				newBoat.setBoatColor(boat_color);
 				newBoat.setLineColor(line_color);
 				boat_color_count++; // use the next set of colors
@@ -377,6 +464,13 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 								new CrumbReceivedRunnable(newBoat));
 				boats_map.put(boat_name, newBoat);
 		}
+
+		/**
+		 * A Runnable that updates a boat's arrow Icon.
+		 * <p>
+		 *     The location and heading are both updated.
+		 * </p>
+		 */
 		class BoatMarkerUpdateRunnable implements Runnable
 		{
 				Boat boat;
@@ -425,12 +519,15 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 				}
 		}
 
+		/**
+		 * A Runnable that displays newly received sensor data
+		 */
 		class SensorDataReceivedRunnable implements Runnable
 		{
 				Boat boat;
 				String name;
 				SensorData lastReceived;
-				public SensorDataReceivedRunnable(Boat _boat)
+				SensorDataReceivedRunnable(Boat _boat)
 				{
 						boat = _boat;
 						name = boat.getName();
@@ -461,11 +558,14 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 				}
 		}
 
+		/**
+		 * A Runnable that updates the waypoint info text.
+		 */
 		class WaypointStateReceivedRunnable implements Runnable
 		{
 				Boat boat;
 				String name;
-				public WaypointStateReceivedRunnable(Boat _boat)
+				WaypointStateReceivedRunnable(Boat _boat)
 				{
 						boat = _boat;
 						name = boat.getName();
@@ -483,13 +583,16 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 				}
 		}
 
+		/**
+		 * A Runnable that creates breadcrumb map markers.
+		 */
 		class CrumbReceivedRunnable implements Runnable
 		{
 				Boat boat;
 				String name;
 				LatLng crumb;
 				Icon icon;
-				public CrumbReceivedRunnable(Boat _boat)
+				CrumbReceivedRunnable(Boat _boat)
 				{
 						Log.i("ODE", "CrumbReceivedRunnable constructor");
 						boat = _boat;
@@ -509,6 +612,9 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 				}
 		}
 
+		/**
+		 * A Runnable that replaces all map waypoint markers with loaded waypoints.
+		 */
 		class LoadedWaypointsRunnable implements Runnable
 		{
 				// Custom runnable that owns a list of waypoints, used for loading waypoints from a file
@@ -517,7 +623,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 				{
 						waypoints = _waypoints;
 				}
-				public void setWaypoints(ArrayList<LatLng> _waypoints)
+				void setWaypoints(ArrayList<LatLng> _waypoints)
 				{
 						waypoints = _waypoints;
 				}
@@ -528,6 +634,10 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 				}
 		}
 
+		/**
+		 * Returns the Boat object for the currently selected boat.
+		 * @return Boat object for the currently selected boat or null if no boats are connected
+		 */
 		Boat currentBoat()
 		{
 				Object result = available_boats_spinner.getSelectedItem();
@@ -536,14 +646,24 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 				return boats_map.get(boat_name);
 		}
 
+		/**
+		 * A Runnable that displays Toast text on the screen.
+		 * <p>
+		 *     Typically used in the RealBoat AsyncTask calls.
+		 * </p>
+		 */
 		class ToastFailureCallback implements Runnable
 		{
 				private String toastString;
-				public ToastFailureCallback(String _toastString) { toastString = _toastString; }
+				ToastFailureCallback(String _toastString) { toastString = _toastString; }
 				@Override
 				public void run() { Toast.makeText(context, toastString, Toast.LENGTH_SHORT).show(); }
 		}
 
+		/**
+		 * Add a single waypoint map marker to the map
+		 * @param point A MapBox LatLng object
+		 */
 		void addSingleWaypointMarker(LatLng point)
 		{
 				waypoint_list.add(point);
@@ -552,6 +672,11 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 				marker_types_map.put(title, PlatypusMarkerTypes.WAYPOINT);
 				Log.v(logTag, String.format("waypoint_list.size() = %d,   marker_list.size() = %d", waypoint_list.size(), marker_list.size()));
 		}
+
+		/**
+		 * Add several waypoint markers to the map
+		 * @param points  An ArrayList of MapBox LatLng objects
+		 */
 		void addWaypointMarkers(ArrayList<LatLng> points)
 		{
 				for (LatLng wp : points)
@@ -559,6 +684,13 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 						addSingleWaypointMarker(wp);
 				}
 		}
+
+		/**
+		 * Clears all waypoints and their markers from the map.
+		 * <p>
+		 *     Also removes the unowned path and resets path length.
+		 * </p>
+		 */
 		void clearWaypointMarkers()
 		{
 				unowned_path.clearPoints();
@@ -568,12 +700,21 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 				marker_list.clear();
 				calculatePathDistance();
 		}
+
+		/**
+		 * Replaces current waypoints and their markers.
+		 * @param new_points  An ArrayList of MapBox LatLng objects representing the new waypoints.
+		 */
 		void replaceWaypointMarkers(ArrayList<LatLng> new_points)
 		{
 				clearWaypointMarkers();
 				addWaypointMarkers(new_points);
 		}
 
+		/**
+		 * Standard Android API onCreate
+		 * @param savedInstanceState
+		 */
 		protected void onCreate(final Bundle savedInstanceState)
 		{
 				super.onCreate(savedInstanceState);
@@ -1361,6 +1502,9 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 				jar3_button.setOnClickListener(jar3_listener);
 				jar4_button.setOnClickListener(jar4_listener);
 
+				/**
+				 * asdf
+				 */
 				class ResetSamplerSuccessRunnable implements Runnable
 				{
 						@Override

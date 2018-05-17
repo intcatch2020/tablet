@@ -1,6 +1,6 @@
 package com.platypus.android.tablet.Joystick;
 
-/**
+/*
  * Created by zeshengxi on 10/28/15.
  */
 import android.content.Context;
@@ -12,6 +12,9 @@ import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
 import android.view.View;
 
+/**
+ * Contains the functionality for the GUI teleoperation thumbstick
+ */
 public class JoystickView extends View {
     public static final int INVALID_POINTER_ID = -1;
 

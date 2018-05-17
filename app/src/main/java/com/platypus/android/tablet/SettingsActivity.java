@@ -20,6 +20,9 @@ import java.util.Map;
 * Map Center location (where map autopans to on next connect)
 * */
 
+/**
+ * The Android Activity for the preferences view (appears when the preferences button is used)
+ */
 public class SettingsActivity extends PreferenceActivity implements SharedPreferences.OnSharedPreferenceChangeListener {
 
     private static TeleOpPanel tpanel;

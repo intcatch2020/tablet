@@ -5,9 +5,11 @@ import android.util.Log;
 import org.json.JSONObject;
 
 /**
- * Created by jason on 9/11/17.
+ * Object that represents the definition of an autonomous behavior.
+ * <p>
+ *     Contains functionality for generating JSON containing the definition.
+ * </p>
  */
-
 public class AutonomousPredicateMessage
 {
 		private JSONObject json = null;

@@ -20,12 +20,8 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Created by jason on 10/26/17.
- * Display unique sensors data as text at the bottom of the main gui activity
- * https://stackoverflow.com/questions/28531996/android-recyclerview-gridlayoutmanager-column-spacing
- * https://stackoverflow.com/questions/32457406/how-to-update-refresh-specific-item-in-recyclerview
+ * Contains the functionality required for the dynamic display of sensor data at the bottom of the GUI
  */
-
 public class SensorStuff
 {
 		// each boat has its own list of unique sensors

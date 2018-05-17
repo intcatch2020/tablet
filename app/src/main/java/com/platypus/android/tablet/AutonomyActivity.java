@@ -13,13 +13,16 @@ import android.widget.TextView;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
+/*
  * Created by jason on 10/13/17.
  * https://www.raywenderlich.com/170075/android-recyclerview-tutorial-kotlin
  * That tutorial uses a weird language on top of java, so syntax is obviously different,
  * but it still shows the overall structure required.
  */
 
+/**
+ * Android Activity for the Autonomous Predicate Message creation and communication
+ */
 public class AutonomyActivity extends Activity
 {
 		private TeleOpPanel tpanel;

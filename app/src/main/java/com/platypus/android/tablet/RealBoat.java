@@ -26,25 +26,66 @@ import java.util.concurrent.TimeUnit;
 import javax.measure.unit.NonSI;
 
 /**
- * Created by jason on 7/12/17.
+ * Represents a real boat and manages connection, listeners, and asynchronous calls to the boat's server
  */
-
 public class RealBoat extends Boat
 {
+		/**
+		 * The UdpVehicleServer object from the Platypus Core.
+		 * Provides the remote procedure call functionality used to send commands to the boat
+		 */
 		private UdpVehicleServer server = null;
+
+		/**
+		 * Object from Platypus Core.
+		 * Provides callback functionality when the boat pushes a new pose to its listeners.
+		 */
 		private PoseListener pl;
+
+		/**
+		 * Object from Platypus Core.
+		 * Provides callback functionality when the boat pushes a new sensor datum to its listeners.
+		 */
 		private SensorListener sl;
+
+		/**
+		 * Object from Platypus Core.
+		 * Provides callback functionality when the boat pushes a new waypoint status to its listeners.
+		 */
 		private WaypointListener wl;
+
+		/**
+		 * Object from Platypus Core.
+		 * Provides callback functionality when the boat pushes a new crumb to its listeners.
+		 */
 		private CrumbListener cl;
+
+		/**
+		 * The interval, in seconds, between executions of the poll checking connectivity with the boat
+		 */
 		private final int CONNECTION_POLL_S = 3;
+
+		/**
+		 * The interval, in seconds, between executions of the poll checking the waypoint index of the boat
+		 */
 		private final int WAYPOINTS_INDEX_POLL_S = 1;
 
-		public RealBoat(String boat_name)
+		/**
+		 * RealBoat constructor instantiates a UdpVehicleServer object
+		 * @param boat_name  the name of the boat
+		 */
+		RealBoat(String boat_name)
 		{
 				name = boat_name;
 				server = new UdpVehicleServer();
 		}
 
+		/**
+		 * A Runnable that checks if the boat is connected.
+		 * <p>
+		 *     Typically run as a periodic poll.
+		 * </p>
+		 */
 		private Runnable isConnectedPoll = new Runnable()
 		{
 				@Override
@@ -76,6 +117,13 @@ public class RealBoat extends Boat
 						}
 				}
 		};
+
+		/**
+		 * A Runnable that checks for the index of the waypoint currently being approached by the boat
+		 * <p>
+		 *     Typically run as a periodic poll.
+		 * </p>
+		 */
 		private Runnable currentWaypointIndexPoll = new Runnable()
 		{
 				@Override
@@ -99,7 +147,14 @@ public class RealBoat extends Boat
 		};
 
 
-
+		/**
+		 * Assign Runnables as callbacks to be run after receiving a new pose, sensor datum, waypoint status, or crumb
+		 * <p> The Platypus Core listener objects are instantiated here. </p>
+		 * @param poseListenerCallback
+		 * @param sensorListenerCallback
+		 * @param waypointListenerCallback
+		 * @param crumbListenerCallback
+		 */
 		@Override
 		public void createListeners(final Runnable poseListenerCallback,
 		                            final Runnable sensorListenerCallback,
@@ -153,7 +208,7 @@ public class RealBoat extends Boat
 								setConnected(true);
 								synchronized (waypoint_state_lock)
 								{
-										waypointState = state.toString();
+										waypoint_state = state.toString();
 								}
 								uiHandler.post(waypointListenerCallback); // update GUI with result
 						}
@@ -250,6 +305,12 @@ public class RealBoat extends Boat
 								currentWaypointIndexPoll, 0, WAYPOINTS_INDEX_POLL_S, TimeUnit.SECONDS);
 		}
 
+		/**
+		 * Overrides Boat abstract method with a asynchronous call to the
+		 * UdpVehicle server (i.e. send wireless messages to the boat).
+		 * @param waypoints  nested array of doubles represents a sequence of latitude/longitude pairs
+		 * @param failureCallback  Runnable that is used when wireless communication fails
+		 */
 		@Override
 		public void startWaypoints(final double[][] waypoints, final Runnable failureCallback)
 		{
@@ -281,6 +342,11 @@ public class RealBoat extends Boat
 				new StartWaypointsAsyncTask().execute();
 		}
 
+		/**
+		 * Overrides Boat abstract method with a asynchronous call to the
+		 * UdpVehicle server (i.e. send wireless messages to the boat).
+		 * @param failureCallback  Runnable that is used when wireless communication fails
+		 */
 		@Override
 		public void stopWaypoints(final Runnable failureCallback)
 		{
@@ -312,6 +378,13 @@ public class RealBoat extends Boat
 				new StopWaypointsAsyncTask().execute();
 		}
 
+		/**
+		 * Overrides Boat abstract method with a asynchronous call to the
+		 * UdpVehicle server (i.e. send wireless messages to the boat).
+ 		 * @param thrust  thrust signal from the joystick
+		 * @param heading  heading/rudder signal from the joystick
+		 * @param failureCallback  Runnable that is used when wireless communication fails
+		 */
 		@Override
 		public void updateControlSignals(final double thrust, final double heading, final Runnable failureCallback)
 		{
@@ -352,6 +425,12 @@ public class RealBoat extends Boat
 				}
 		}
 
+		/**
+		 * Overrides Boat abstract method with a asynchronous call to the
+		 * UdpVehicle server (i.e. send wireless messages to the boat).
+ 		 * @param b  True if the boat should be autonomous, false otherwise
+		 * @param failureCallback  Runnable that is used when wireless communication fails
+		 */
 		@Override
 		public void setAutonomous(final boolean b, final Runnable failureCallback)
 		{
@@ -381,6 +460,13 @@ public class RealBoat extends Boat
 				new SetAutonomousAsyncTask().execute();
 		}
 
+		/**
+		 * Overrides Boat abstract method with a asynchronous call to the
+		 * UdpVehicle server (i.e. send wireless messages to the boat).
+ 		 * @param thrustPID  double array with 3 values representing P, I, and D for thrust control
+		 * @param headingPID  double array with 3 values representing P, I, and D for heading/rudder control
+		 * @param failureCallback  Runnable that is used when wireless communication fails
+		 */
 		@Override
 		public void setPID(final double[] thrustPID, final double[] headingPID, final Runnable failureCallback)
 		{
@@ -433,6 +519,12 @@ public class RealBoat extends Boat
 				new SetPIDAsyncTask().execute();
 		}
 
+		/**
+		 * Overrides Boat abstract method with a asynchronous call to the
+		 * UdpVehicle server (i.e. send wireless messages to the boat).
+		 * @param waypoint  latitude/longtidue of the waypoint
+		 * @param failureCallback  Runnable that is used when wireless communication fails
+		 */
 		@Override
 		public void addWaypoint(final double[] waypoint, final Runnable failureCallback)
 		{
@@ -447,6 +539,7 @@ public class RealBoat extends Boat
 				Log.i(logTag, String.format("connection to ip address %s", a.toString()));
 				server.setVehicleService(a);
 		}
+
 
 		@Override
 		public void setHome(LatLng home, final Runnable successCallback, final Runnable failureCallback)

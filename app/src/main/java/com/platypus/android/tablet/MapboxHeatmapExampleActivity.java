@@ -25,11 +25,14 @@ import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.circleBlur;
 import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.circleColor;
 import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.circleRadius;
 
-/**
+/*
  * Created by jason on 10/18/17.
  * https://github.com/mapbox/mapbox-android-demo/blob/master/MapboxAndroidDemo/src/main/java/com/mapbox/mapboxandroiddemo/examples/dds/CreateHeatmapPointsActivity.java
  */
 
+/**
+ * An unused Activity that experiments with MapBox API heatmaps for displaying sensor data
+ */
 public class MapboxHeatmapExampleActivity extends Activity
 {
 		private MapView mapView;
