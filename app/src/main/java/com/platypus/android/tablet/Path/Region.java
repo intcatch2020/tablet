@@ -1,6 +1,7 @@
 package com.platypus.android.tablet.Path;
 
 import android.util.Log;
+import android.util.Pair;
 
 import com.mapbox.mapboxsdk.geometry.LatLng;
 
@@ -8,6 +9,7 @@ import org.jscience.geography.coordinates.LatLong;
 import org.jscience.geography.coordinates.UTM;
 import org.jscience.geography.coordinates.crs.ReferenceEllipsoid;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -25,6 +27,73 @@ import javax.measure.unit.SI;
 
 public class Region
 {
+
+		class Intersection
+		{
+				int first;
+				int second;
+				Double[] p;
+				boolean usable;
+				double distance_to_center;
+				Intersection(int first_, int second_, Double[] p_)
+				{
+						first = first_;
+						second = second_;
+						p = p_.clone();
+						usable = true;
+						distance_to_center = distanceToCentroid(p);
+				}
+				/*
+				boolean eq(Intersection j)
+				{
+						return ((first == j.first && second == j.second) || (first == j.second && second == j.first));
+				}
+				*/
+		}
+
+		class Line
+		{
+				int index;
+				Double[] p1;
+				Double[] p2;
+				Line(int index_, Double[] p1_, Double[] p2_)
+				{
+						index = index_;
+						p1 = p1_.clone();
+						p2 = p2_.clone();
+				}
+				boolean eq(Line j)
+				{
+						return index == j.index;
+				}
+				Intersection findIntersection(Line j)
+				{
+						Double[] d1 = difference(p1, p2);
+						Double[] d2 = difference(j.p1, j.p2);
+						Double[] dp = difference(j.p1, p1);
+						Double[] d1p = new Double[]{-d1[1], d1[0]};
+						double denominator = dot(d1p, d2);
+						double numerator = dot(d1p, dp);
+						double c = numerator/denominator;
+						return new Intersection(index, j.index, new Double[] {c*d2[0] + j.p1[0], c*d2[1] + j.p1[1]});
+				}
+		}
+
+		/*
+		class IntersectionTriplet
+		{
+				Pair<Integer, Integer> i;
+				Pair<Integer, Integer> j;
+				Pair<Integer, Integer> skip;
+				IntersectionTriplet(Pair<Integer, Integer> i_, Pair<Integer, Integer> j_, Pair<Integer, Integer> skip_)
+				{
+						i = i_;
+						j = j_;
+						skip = skip_;
+				}
+		}
+		*/
+
 		private ArrayList<LatLng> original_points = new ArrayList<>();
 		private ArrayList<Double[]> convex_xy = new ArrayList<>();
 		private ArrayList<Double[]> path_xy = new ArrayList<>();
@@ -134,6 +203,7 @@ public class Region
 				return distance(a, local_centroid);
 		}
 
+		/*
 		private double minDistanceToCentroid(ArrayList<Double[]> points)
 		{
 				double min_distance = -1;
@@ -155,6 +225,7 @@ public class Region
 				}
 				return max_distance;
 		}
+		*/
 
 		private double[][] pairwiseDistances(ArrayList<Double[]> points)
 		{
@@ -190,6 +261,7 @@ public class Region
 				return new int[]{maxi, maxj};
 		}
 
+		/*
 		private boolean isMergeValid(ArrayList<Double[]> hull, Double[] i12, Double[] i23, Double[] i13)
 		{
 				double dist_12 = distanceToCentroid(i12);
@@ -199,16 +271,16 @@ public class Region
 
 				if (dist_13 < dist_12 && dist_13 < dist_23 && hull.size() > 3 && isInsideHull(hull, i13))
 				{
-						/*
-						How to judge if a point is above or below a line:
-						equation for line --> y = mx + b
-						1) using centroid and i12, find m and b
-							a) know change in y, now change in x --> m
-							b) b = y - mx --> plug in m, x and y of centroid to find b
-						2) plug in i23[0] i23[1] for x and y --> mx + b - y = positive or negative?
-						3) plug in i13[0] i13[1] for x and y --> mx + b - y = positive or negative?
-						4) If the signs in #2 and #3 are the same, then i13 can be valid
-						 */
+
+						//How to judge if a point is above or below a line:
+						//equation for line --> y = mx + b
+						//1) using centroid and i12, find m and b
+						//	a) know change in y, now change in x --> m
+						//	b) b = y - mx --> plug in m, x and y of centroid to find b
+						//2) plug in i23[0] i23[1] for x and y --> mx + b - y = positive or negative?
+						//3) plug in i13[0] i13[1] for x and y --> mx + b - y = positive or negative?
+						//4) If the signs in #2 and #3 are the same, then i13 can be valid
+
 						Double[] diff = difference(local_centroid, i12);
 						double m = diff[1]/diff[0];
 						double b = i12[1] - m*i12[0];
@@ -220,6 +292,7 @@ public class Region
 				}
 				return false;
 		}
+		*/
 
 		private Boolean isInsideHull(ArrayList<Double[]> hull, Double[] p)
 		{
@@ -270,6 +343,7 @@ public class Region
 				return result;
 		}
 
+		/*
 		private ArrayList<Double[]> mergeClosePoints(ArrayList<Double[]> points, double merging_distance)
 		{
 				// merge one pair at a time, recurse until no pairs can be merged OR only 3 points remain OR all points would merge
@@ -318,6 +392,7 @@ public class Region
 				}
 				return mergeClosePoints(result, merging_distance);
 		}
+		*/
 
 		private Double[] calculateCentroid(ArrayList<Double[]> points)
 		{
@@ -330,6 +405,7 @@ public class Region
 				return result;
 		}
 
+		/*
 		private ArrayList<Double[]> lineSegmentDifferences(ArrayList<Double[]> points)
 		{
 				ArrayList<Double[]> rolled_points = shiftArrayList(points, 1);
@@ -342,6 +418,7 @@ public class Region
 				}
 				return result;
 		}
+		*/
 		private ArrayList<Double> lineSegmentNormalAngles(ArrayList<Double[]> points)
 		{
 				ArrayList<Double[]> rolled_points = shiftArrayList(points, 1);
@@ -357,6 +434,7 @@ public class Region
 				return result;
 		}
 
+		/*
 		private Double[] findIntersection(Double[] line1_point1, Double[] line1_point2, Double[] line2_point1, Double[] line2_point2)
 		{
 				Double[] d1 = difference(line1_point1, line1_point2);
@@ -368,6 +446,7 @@ public class Region
 				double c = numerator/denominator;
 				return new Double[]{c*d2[0] + line2_point1[0], c*d2[1] + line2_point1[1]};
 		}
+		*/
 
 		private void inwardNextHull(ArrayList<Double[]> previous_hull, int inward_count)
 		{
@@ -384,33 +463,133 @@ public class Region
 						return; // recursion stack unravels here, so return, now with path_xy fully populated
 				}
 
+
 				// find the normal angles of the line segments (make sure it points inward)
 				ArrayList<Double> normal_angles = lineSegmentNormalAngles(previous_hull);
-				ArrayList<Double> rolled_angles = shiftArrayList(normal_angles, -1);
+				ArrayList<Line> lines = new ArrayList<>();
+				//ArrayList<Double> rolled_angles = shiftArrayList(normal_angles, -1);
 
 				// find the points if they were moved inward along their normal by the transect distance
-				ArrayList<Double[]> new_segments_point_1 = new ArrayList<>();
-				ArrayList<Double[]> new_segments_point_2 = new ArrayList<>();
-				for (int i = 0; i < previous_hull.size(); i++)
+				//ArrayList<Double[]> new_segments_point_1 = new ArrayList<>();
+				//ArrayList<Double[]> new_segments_point_2 = new ArrayList<>();
+				int N = previous_hull.size();
+				for (int i = 0; i < N; i++)
 				{
-						Double[] p = previous_hull.get(i);
+						Double[] p1 = previous_hull.get(i);
+						int j = i+1 % N; // wrap the index
+						Double[] p2 = previous_hull.get(j);
 						double angle = normal_angles.get(i);
-						double rolled_angle = rolled_angles.get(i);
+
 						Log.v(logTag, String.format("Normal angle: %f", angle));
-						Log.v(logTag, String.format("Rolled normal angle: %f", rolled_angle));
 						Double[] new_1 = new Double[]{
-										p[0] + transect_distance*Math.cos(angle),
-										p[1] + transect_distance*Math.sin(angle)};
+										p1[0] + transect_distance*Math.cos(angle),
+										p1[1] + transect_distance*Math.sin(angle)};
 						Double[] new_2 = new Double[]{
-										p[0] + transect_distance*Math.cos(rolled_angle),
-										p[1] + transect_distance*Math.sin(rolled_angle)};
-						new_segments_point_1.add(new_1);
-						new_segments_point_2.add(new_2);
+										p2[0] + transect_distance*Math.cos(angle),
+										p2[1] + transect_distance*Math.sin(angle)};
+						lines.add(new Line(i, new_1, new_2));
 				}
 
-				// shift new_segments_point_2 so that the new lines have their indices aligned properly
-				new_segments_point_2 = shiftArrayList(new_segments_point_2, 1);
+				// find all possible intersections
+				//Set<Intersection> intersections = new HashSet<>();
+				HashMap<Pair<Integer, Integer>, Intersection> intersections = new HashMap<>();
+				/*
+				for (Line li : lines)
+				{
+						for (Line lj : lines)
+						{
+								if (!li.eq(lj))
+								{
+										if (!intersections.containsKey(new Pair<>(li.index, lj.index)))
+										{
+												Intersection new_intersection = li.findIntersection(lj);
+												// include both i,j and j,i keys
+												intersections.put(new Pair<>(li.index, lj.index), new_intersection);
+												intersections.put(new Pair<>(lj.index, li.index), new_intersection);
+										}
+								}
+						}
+				}
+				*/
 
+				// find all intersections
+				int skip_level = 1;
+				int i = 0;
+				do
+				{
+						int j = (i + skip_level) % N;
+						Pair<Integer, Integer> pair = new Pair<>(i, j);
+						Pair<Integer, Integer> reverse_pair = new Pair<>(i, j);
+						if(intersections.containsKey(pair) || intersections.containsKey(reverse_pair))
+						{
+								break;
+						}
+
+						Intersection ij = lines.get(i).findIntersection(lines.get(j));
+						if (isInsideHull(previous_hull, ij.p))
+						{
+								intersections.put(pair, ij);
+								// check for intersection triplets
+								if (skip_level > 1)
+								{
+										////////////////////////////////////
+										// TODO: need to find the two points we might be replacing
+										// TODO:    we know that the indices are in between i and j, but in the wrapping index space, not arithmetically
+										// TODO:    we always travel toward increasing (but wrapped) index, i.e. 3, 4, 5, 1, 2, etc.
+										//
+										Pair<Integer, Integer> parent_1 = new Pair<>(i, (i + skip_level-1) % N);
+										Pair<Integer, Integer> parent_2 = new Pair<>((i + 1) % N, j);
+										////////////////////////////////////
+
+										// check if i,j is closer to the centroid than the parents
+										if
+										(
+												intersections.get(new Pair<>(i, j)).distance_to_center < intersections.get(parent_1).distance_to_center
+												&&
+												intersections.get(new Pair<>(i, j)).distance_to_center < intersections.get(parent_2).distance_to_center
+										)
+										{
+										// lines will merge, so only retain i,j
+										intersections.get(new Pair<>(i, j)).usable = true;
+										intersections.get(parent_1).usable = false;
+										intersections.get(parent_2).usable = false;
+										}
+										else
+										{
+												// i,j was not closer, do not use it
+												intersections.get(new Pair<>(i, j)).usable = false;
+										}
+								} // if skip_level > 1
+						} // if i,j inside hull
+
+						i += 1;
+						if (i == N)
+						{
+								i = 0;
+								skip_level += 1;
+						}
+				} while (true);
+
+				ArrayList<Intersection> new_hull = new ArrayList<>();
+				for (Intersection intersection : intersections.values())
+				{
+						if (intersection.usable) new_hull.add(intersection);
+				}
+
+				// if there aren't at least three accepted vertices truncate
+				if (new_hull.size() < 3)
+				{
+						Log.i(logTag, "There are less than 3 accepted vertices, truncating");
+						path_xy.add(local_centroid);
+						return;
+				}
+
+
+
+				// shift new_segments_point_2 so that the new lines have their indices aligned properly
+				//new_segments_point_2 = shiftArrayList(new_segments_point_2, 1);
+
+				/*
 				// find intersections between the new lines
 				ArrayList<Double[]> new_segments_point_1_rolled = shiftArrayList(new_segments_point_1, 1);
 				ArrayList<Double[]> new_segments_point_2_rolled = shiftArrayList(new_segments_point_2, 1);
@@ -524,6 +703,7 @@ public class Region
 								return;
 						}
 				}
+				*/
 
 				/*
 				// Check for overshoot #2: max distance to centroid must always decrease
@@ -545,6 +725,7 @@ public class Region
 				}
 				*/
 
+				/*
 				// to create a *closed-hull* spiral we need to shift back by one again (3rd must become 1st)
 				// TODO: Find a "primary vertex" in the original first hull that we will use as a tool to order all subsequent hulls
 				// TODO: To find the shift necessary to create that nice inward spiral,
@@ -563,6 +744,7 @@ public class Region
 
 				inward_count += 1;
 				inwardNextHull(reordered, inward_count);
+				*/
 		}
 
 		private void convexHull() throws Exception
@@ -603,5 +785,8 @@ public class Region
 				}
 				return result;
 		}
+
+
+
 
 }
