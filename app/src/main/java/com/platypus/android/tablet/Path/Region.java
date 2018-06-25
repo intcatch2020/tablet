@@ -9,14 +9,8 @@ import org.jscience.geography.coordinates.LatLong;
 import org.jscience.geography.coordinates.UTM;
 import org.jscience.geography.coordinates.crs.ReferenceEllipsoid;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import javax.measure.unit.NonSI;
 import javax.measure.unit.SI;
@@ -43,12 +37,6 @@ public class Region
 						usable = true;
 						distance_to_center = distanceToCentroid(p);
 				}
-				/*
-				boolean eq(Intersection j)
-				{
-						return ((first == j.first && second == j.second) || (first == j.second && second == j.first));
-				}
-				*/
 		}
 
 		class Line
@@ -62,10 +50,7 @@ public class Region
 						p1 = p1_.clone();
 						p2 = p2_.clone();
 				}
-				boolean eq(Line j)
-				{
-						return index == j.index;
-				}
+
 				Intersection findIntersection(Line j)
 				{
 						Double[] d1 = difference(p1, p2);
@@ -79,20 +64,80 @@ public class Region
 				}
 		}
 
-		/*
-		class IntersectionTriplet
+		class IntersectionMap extends HashMap<Pair<Integer, Integer>, Intersection>
 		{
-				Pair<Integer, Integer> i;
-				Pair<Integer, Integer> j;
-				Pair<Integer, Integer> skip;
-				IntersectionTriplet(Pair<Integer, Integer> i_, Pair<Integer, Integer> j_, Pair<Integer, Integer> skip_)
+				// Override get and containsKey so that the integers can be in reverse order
+				@Override
+				public Intersection get(Object key_)
 				{
-						i = i_;
-						j = j_;
-						skip = skip_;
+						Pair<Integer, Integer> key = (Pair<Integer, Integer>) key_;
+						Pair<Integer, Integer> reverseKey = new Pair<>(key.second, key.first);
+						if (super.containsKey(key))
+						{
+								return super.get(key);
+						}
+						else if (super.containsKey(reverseKey))
+						{
+								return super.get(reverseKey);
+						}
+						return null;
+				}
+
+				@Override
+				public boolean containsKey(Object key_)
+				{
+						Pair<Integer, Integer> key = (Pair<Integer, Integer>) key_;
+						Pair<Integer, Integer> reverseKey = new Pair<>(key.second, key.first);
+						if (super.containsKey(key))
+						{
+								return true;
+						}
+						else if (super.containsKey(reverseKey))
+						{
+								return true;
+						}
+						return false;
 				}
 		}
-		*/
+
+		private int wrappedIndexDistance(int i, int j, int N)
+		{
+				// enforce indices to be < N, the size of the array
+				i %= N;
+				j %= N;
+
+				// j must be >= i
+				if (j < i)
+				{
+						// enforce j >= i
+						int i_ = i;
+						int j_ = j;
+						i = j_;
+						j = i_;
+				}
+				// minimum distance between i to j, wrapping around at the end of the array
+				// NOTE: this is unsigned distance!!!
+				int dist_i2j = 0;
+				int k = i;
+				while (k != j)
+				{
+						dist_i2j += 1;
+						k += 1;
+						k %= N;
+				}
+
+				int dist_j2i = 0;
+				k = j;
+				while (k != i)
+				{
+						dist_j2i += 1;
+						k += 1;
+						k %= N;
+				}
+
+				if (dist_i2j < dist_j2i) return dist_i2j;
+				return dist_j2i;
+		}
 
 		private ArrayList<LatLng> original_points = new ArrayList<>();
 		private ArrayList<Double[]> convex_xy = new ArrayList<>();
@@ -296,6 +341,7 @@ public class Region
 
 		private Boolean isInsideHull(ArrayList<Double[]> hull, Double[] p)
 		{
+				// assumes a hull, i.e. the order of points in the array matter!
 				ArrayList<Double> normal_angles = lineSegmentNormalAngles(hull);
 				Boolean isInside = true;
 				for (int j = 0; j < hull.size(); j++)
@@ -421,6 +467,7 @@ public class Region
 		*/
 		private ArrayList<Double> lineSegmentNormalAngles(ArrayList<Double[]> points)
 		{
+				/*
 				ArrayList<Double[]> rolled_points = shiftArrayList(points, 1);
 				ArrayList<Double> result = new ArrayList<>();
 				for (int i = 0; i < points.size(); i++)
@@ -428,6 +475,17 @@ public class Region
 						Double[] a = rolled_points.get(i);
 						Double[] b = points.get(i);
 						//Log.v(logTag, String.format("a = [%.0f, %.0f], b = [%.0f, %.0f]", a[0], a[1], b[0], b[1]));
+						double raw_angle = Math.atan2(b[1]-a[1], b[0]-a[0]) + Math.PI/2.0;
+						result.add(wrapToPi(raw_angle));
+				}
+				return result;
+				*/
+				ArrayList<Double> result = new ArrayList<>();
+				for (int i = 0; i < points.size(); i++)
+				{
+						int j = (i+1) % points.size();
+						Double[] a = points.get(i);
+						Double[] b = points.get(j);
 						double raw_angle = Math.atan2(b[1]-a[1], b[0]-a[0]) + Math.PI/2.0;
 						result.add(wrapToPi(raw_angle));
 				}
@@ -476,7 +534,7 @@ public class Region
 				for (int i = 0; i < N; i++)
 				{
 						Double[] p1 = previous_hull.get(i);
-						int j = i+1 % N; // wrap the index
+						int j = (i+1) % N; // wrap the index
 						Double[] p2 = previous_hull.get(j);
 						double angle = normal_angles.get(i);
 
@@ -491,98 +549,105 @@ public class Region
 				}
 
 				// find all possible intersections
-				//Set<Intersection> intersections = new HashSet<>();
-				HashMap<Pair<Integer, Integer>, Intersection> intersections = new HashMap<>();
-				/*
-				for (Line li : lines)
-				{
-						for (Line lj : lines)
-						{
-								if (!li.eq(lj))
-								{
-										if (!intersections.containsKey(new Pair<>(li.index, lj.index)))
-										{
-												Intersection new_intersection = li.findIntersection(lj);
-												// include both i,j and j,i keys
-												intersections.put(new Pair<>(li.index, lj.index), new_intersection);
-												intersections.put(new Pair<>(lj.index, li.index), new_intersection);
-										}
-								}
-						}
-				}
-				*/
+				IntersectionMap intersections = new IntersectionMap();
 
 				// find all intersections
-				int skip_level = 1;
-				int i = 0;
-				do
+				for (int i = 0; i < N; i++)
 				{
-						int j = (i + skip_level) % N;
-						Pair<Integer, Integer> pair = new Pair<>(i, j);
-						Pair<Integer, Integer> reverse_pair = new Pair<>(i, j);
-						if(intersections.containsKey(pair) || intersections.containsKey(reverse_pair))
+						int skip_level = 1;
+						int j, k;
+						do
 						{
-								break;
-						}
+								j = (i+skip_level) % N;
+								k = (i+1+skip_level) % N;
 
-						Intersection ij = lines.get(i).findIntersection(lines.get(j));
-						if (isInsideHull(previous_hull, ij.p))
-						{
-								intersections.put(pair, ij);
-								// check for intersection triplets
-								if (skip_level > 1)
+								// first pair of lines
+								Pair<Integer, Integer> ij = new Pair<>(i, j);
+								if (!intersections.containsKey(ij))
 								{
-										////////////////////////////////////
-										// TODO: need to find the two points we might be replacing
-										// TODO:    we know that the indices are in between i and j, but in the wrapping index space, not arithmetically
-										// TODO:    we always travel toward increasing (but wrapped) index, i.e. 3, 4, 5, 1, 2, etc.
-										//
-										Pair<Integer, Integer> parent_1 = new Pair<>(i, (i + skip_level-1) % N);
-										Pair<Integer, Integer> parent_2 = new Pair<>((i + 1) % N, j);
-										////////////////////////////////////
+										intersections.put(ij, lines.get(ij.first).findIntersection(lines.get(ij.second)));
+										if (!isInsideHull(previous_hull, intersections.get(ij).p)) intersections.get(ij).usable = false;
+								}
 
-										// check if i,j is closer to the centroid than the parents
-										if
-										(
-												intersections.get(new Pair<>(i, j)).distance_to_center < intersections.get(parent_1).distance_to_center
-												&&
-												intersections.get(new Pair<>(i, j)).distance_to_center < intersections.get(parent_2).distance_to_center
-										)
+								// following pair of lines
+								Pair<Integer, Integer> jk = new Pair<>((i+1) % N, k);
+								if (!intersections.containsKey(jk))
+								{
+										intersections.put(jk, lines.get(jk.first).findIntersection(lines.get(jk.second)));
+										if (!isInsideHull(previous_hull, intersections.get(jk).p)) intersections.get(jk).usable = false;
+								}
+
+								if (N > 3) // with a triangle, no merging at all
+								{
+										// skip pair of lines
+										Pair<Integer, Integer> ik = new Pair<>(i, k);
+										if (!intersections.containsKey(ik))
 										{
-										// lines will merge, so only retain i,j
-										intersections.get(new Pair<>(i, j)).usable = true;
-										intersections.get(parent_1).usable = false;
-										intersections.get(parent_2).usable = false;
+												intersections.put(ik, lines.get(ij.first).findIntersection(lines.get(jk.second)));
+												intersections.get(ik).usable = false; // must start as false
+										}
+
+										// check if the triplet
+										if (isInsideHull(previous_hull, intersections.get(ik).p))
+										{
+												if (intersections.get(ik).distance_to_center < intersections.get(ij).distance_to_center
+																&& intersections.get(ik).distance_to_center < intersections.get(jk).distance_to_center)
+												{
+														ArrayList<Double[]> hull_points = new ArrayList<>();
+														hull_points.add(intersections.get(ij).p);
+														hull_points.add(intersections.get(jk).p);
+														hull_points.add(intersections.get(ik).p);
+														ArrayList<Double[]> hull = convexHull(hull_points);
+														if (!isInsideHull(hull, local_centroid))
+														{
+																intersections.get(ij).usable = false;
+																intersections.get(jk).usable = false;
+																intersections.get(ik).usable = true;
+														}
+												}
+												// else ik is not the closest, don't need to do anything
 										}
 										else
 										{
-												// i,j was not closer, do not use it
-												intersections.get(new Pair<>(i, j)).usable = false;
+												// ik is not inside hull
+												intersections.get(ik).usable = false;
 										}
-								} // if skip_level > 1
-						} // if i,j inside hull
-
-						i += 1;
-						if (i == N)
-						{
-								i = 0;
+								}
 								skip_level += 1;
-						}
-				} while (true);
+						} while ((skip_level + 1) <= wrappedIndexDistance(i, (i+1+skip_level) % N, N));
+				}
 
-				ArrayList<Intersection> new_hull = new ArrayList<>();
+				ArrayList<Double[]> points = new ArrayList<>();
 				for (Intersection intersection : intersections.values())
 				{
-						if (intersection.usable) new_hull.add(intersection);
+						if (intersection.usable) points.add(intersection.p);
 				}
 
 				// if there aren't at least three accepted vertices truncate
-				if (new_hull.size() < 3)
+				if (points.size() < 3)
 				{
 						Log.i(logTag, "There are less than 3 accepted vertices, truncating");
 						path_xy.add(local_centroid);
 						return;
 				}
+
+				ArrayList<Double[]> new_hull = convexHull(points);
+				// OR if the new hull doesn't contain the previous center
+				if (!isInsideHull(new_hull, local_centroid))
+				{
+						Log.i(logTag, "New hull does not contain previous center, truncating");
+						path_xy.add(local_centroid);
+						return;
+				}
+
+				local_centroid = calculateCentroid(new_hull);
+				Log.i(logTag, String.format("New local centroid = [%.1f, %.1f]", local_centroid[0], local_centroid[1]));
+
+				path_xy.addAll(new_hull);
+				path_xy.add(new_hull.get(0).clone()); // close the hull before moving to inward hull
+
+				inward_count += 1;
+				inwardNextHull(new_hull, inward_count);
 
 
 
@@ -751,14 +816,20 @@ public class Region
 		{
 				// set convex_xy based on original_points
 				ArrayList<Double[]> utm_points = latLngToUTM(original_points);
-				ArrayList<Integer> convex_indices = GrahamScan.getConvexHull(utm_points);
-				ArrayList<Double[]> utm_hull = new ArrayList<>();
-				for (Integer i : convex_indices)
-				{
-						utm_hull.add(utm_points.get(i));
-				}
+				ArrayList<Double[]> utm_hull = convexHull(utm_points);
 				convex_xy = zeroCentroid(utm_hull);
 				// Double[] should_be_zero_centroid = calculateCentroid(convex_xy);
+		}
+
+		private ArrayList<Double[]> convexHull(ArrayList<Double[]> points)
+		{
+				ArrayList<Integer> convex_indices = GrahamScan.getConvexHull(points);
+				ArrayList<Double[]> hull = new ArrayList<>();
+				for (Integer i : convex_indices)
+				{
+						hull.add(points.get(i));
+				}
+				return hull;
 		}
 
 		private ArrayList<Double[]> latLngToUTM(ArrayList<LatLng> points)
