@@ -118,7 +118,7 @@ public class Region
 						return false;
 				}
 
-				private IntersectionMap sliceBySharedKey(int i, int j, ArrayList<Intersection> do_not_include)
+				private IntersectionMap sliceBySharedKey(int i, int j)
 				{
 						// provide a list of all intersections that share only 1 of i or j, but not both!
 						IntersectionMap result = new IntersectionMap();
@@ -127,15 +127,15 @@ public class Region
 								Pair<Integer, Integer> key = entry.getKey();
 								if ((key.first == i ^ key.second == j) || (key.second == i ^ key.first == j))
 								{
-										if (!do_not_include.contains(entry.getValue())) result.put(key, entry.getValue());
+										result.put(key, entry.getValue());
 								}
 						}
 						return result;
 				}
 
-				IntersectionMap sliceBySharedKey(Intersection i, ArrayList<Intersection> do_not_include)
+				IntersectionMap sliceBySharedKey(Intersection i)
 				{
-						return sliceBySharedKey(i.first, i.second, do_not_include);
+						return sliceBySharedKey(i.first, i.second);
 				}
 		}
 
@@ -448,9 +448,7 @@ public class Region
 				{
 						Intersection last_intersection = hull_intersections.get(hull_intersections.size()-1);
 						// find all intercepts that share either i or j of current intercept
-						next_possible_intersections = intersections.sliceBySharedKey(
-										last_intersection,
-										hull_intersections);
+						next_possible_intersections = intersections.sliceBySharedKey(last_intersection);
 
 						// trim that down so that we maintain a negative cross-product sign
 						//      (i.e. if we started clockwise, do not consider intercepts that would be counterclockwise)
@@ -514,6 +512,9 @@ public class Region
 										next_intersection = intersection;
 								}
 						}
+
+						if (hull_intersections.contains(next_intersection)) break; // next point has already been used
+
 						hull_intersections.add(next_intersection);
 				} while (true);
 
