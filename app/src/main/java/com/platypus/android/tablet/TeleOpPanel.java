@@ -2037,12 +2037,12 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 								if (wp_index > i + 1 || (owned && wp_index == -1))
 								{
 										top.add(mMapboxMap.addPolyline(new PolylineOptions().addAll(pair).color(Color.GRAY).width(4)));
-										Log.d(logTag, String.format("line i = %d, current_waypoint = %d, GRAY", i, wp_index));
+										Log.v(logTag, String.format("line i = %d, current_waypoint = %d, GRAY", i, wp_index));
 								}
 								else
 								{
 										top.add(mMapboxMap.addPolyline(new PolylineOptions().addAll(pair).color(color).width(4)));
-										Log.d(logTag, String.format("line i = %d, current_waypoint = %d, COLORED", i, wp_index));
+										Log.v(logTag, String.format("line i = %d, current_waypoint = %d, COLORED", i, wp_index));
 								}
 						}
 				}

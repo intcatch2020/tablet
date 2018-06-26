@@ -11,6 +11,8 @@ import org.jscience.geography.coordinates.crs.ReferenceEllipsoid;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 import javax.measure.unit.NonSI;
 import javax.measure.unit.SI;
@@ -37,6 +39,15 @@ public class Region
 						usable = true;
 						distance_to_center = distanceToCentroid(p);
 				}
+
+				/*
+				int findSharedLine(Intersection j)
+				{
+						if (first == j.first || first == j.second) return first;
+						if (second == j.first || second == j.second) return second;
+						return -1;
+				}
+				*/
 		}
 
 		class Line
@@ -62,6 +73,31 @@ public class Region
 						double c = numerator/denominator;
 						return new Intersection(index, j.index, new Double[] {c*d2[0] + j.p1[0], c*d2[1] + j.p1[1]});
 				}
+
+				double cross(Line j)
+				{
+						Double[] d1 = difference(p1, p2);
+						Double[] d2 = difference(j.p1, j.p2);
+						return d1[0]*d2[1] - d2[0]*d1[1];
+				}
+
+				double length()
+				{
+						return distance(p1, p2);
+				}
+
+				double incidentAngle(Line j)
+				{
+						return Math.asin(cross(j)/(length()*j.length()));
+				}
+
+				/*
+				Line flip()
+				{
+						// return a new line with p1 and p2 flipped
+						return new Line(this.index, this.p2, this.p1);
+				}
+				*/
 		}
 
 		class IntersectionMap extends HashMap<Pair<Integer, Integer>, Intersection>
@@ -98,8 +134,34 @@ public class Region
 						}
 						return false;
 				}
+
+				private IntersectionMap sliceBySharedKey(int i, int j, ArrayList<Intersection> do_not_include)
+				{
+						// provide a list of all intersections that share only 1 of i or j, but not both!
+						IntersectionMap result = new IntersectionMap();
+						for (Entry<Pair<Integer, Integer>, Intersection> entry : this.entrySet())
+						{
+								Pair<Integer, Integer> key = entry.getKey();
+								if ((key.first == i ^ key.second == j) || (key.second == i ^ key.first == j))
+								{
+										if (!do_not_include.contains(entry.getValue())) result.put(key, entry.getValue());
+								}
+						}
+						return result;
+				}
+
+				IntersectionMap sliceBySharedKey(Intersection i, ArrayList<Intersection> do_not_include)
+				{
+						return sliceBySharedKey(i.first, i.second, do_not_include);
+				}
 		}
 
+		boolean approxEq(double a, double b, double tolerance)
+		{
+				return Math.abs(b-a) <= tolerance;
+		}
+
+		/*
 		private int wrappedIndexDistance(int i, int j, int N)
 		{
 				// enforce indices to be < N, the size of the array
@@ -138,6 +200,7 @@ public class Region
 				if (dist_i2j < dist_j2i) return dist_i2j;
 				return dist_j2i;
 		}
+		*/
 
 		private ArrayList<LatLng> original_points = new ArrayList<>();
 		private ArrayList<Double[]> convex_xy = new ArrayList<>();
@@ -182,7 +245,7 @@ public class Region
 				path_points.clear();
 				for (Double[] p : path_xy)
 				{
-						Log.d(logTag, String.format("final sequence point = [%.1f, %.1f]", p[0], p[1]));
+						Log.v(logTag, String.format("final sequence point = [%.1f, %.1f]", p[0], p[1]));
 						// add back in the UTM offset
 						p[0] += utm_centroid[0];
 						p[1] += utm_centroid[1];
@@ -548,85 +611,131 @@ public class Region
 						lines.add(new Line(i, new_1, new_2));
 				}
 
-				// find all possible intersections
+				// all possible intersections - do not include if they are not inside the hull!
 				IntersectionMap intersections = new IntersectionMap();
-
-				// find all intersections
 				for (int i = 0; i < N; i++)
 				{
-						int skip_level = 1;
-						int j, k;
-						do
+						for (int j = 0; j < N; j++)
 						{
-								j = (i+skip_level) % N;
-								k = (i+1+skip_level) % N;
-
-								// first pair of lines
-								Pair<Integer, Integer> ij = new Pair<>(i, j);
-								if (!intersections.containsKey(ij))
+								if (i != j)
 								{
-										intersections.put(ij, lines.get(ij.first).findIntersection(lines.get(ij.second)));
-										if (!isInsideHull(previous_hull, intersections.get(ij).p)) intersections.get(ij).usable = false;
-								}
-
-								// following pair of lines
-								Pair<Integer, Integer> jk = new Pair<>((i+1) % N, k);
-								if (!intersections.containsKey(jk))
-								{
-										intersections.put(jk, lines.get(jk.first).findIntersection(lines.get(jk.second)));
-										if (!isInsideHull(previous_hull, intersections.get(jk).p)) intersections.get(jk).usable = false;
-								}
-
-								if (N > 3) // with a triangle, no merging at all
-								{
-										// skip pair of lines
-										Pair<Integer, Integer> ik = new Pair<>(i, k);
-										if (!intersections.containsKey(ik))
+										Pair<Integer, Integer> ij = new Pair<>(i, j);
+										if (!intersections.containsKey(ij))
 										{
-												intersections.put(ik, lines.get(ij.first).findIntersection(lines.get(jk.second)));
-												intersections.get(ik).usable = false; // must start as false
-										}
-
-										// check if the triplet
-										if (isInsideHull(previous_hull, intersections.get(ik).p))
-										{
-												if (intersections.get(ik).distance_to_center < intersections.get(ij).distance_to_center
-																&& intersections.get(ik).distance_to_center < intersections.get(jk).distance_to_center)
-												{
-														ArrayList<Double[]> hull_points = new ArrayList<>();
-														hull_points.add(intersections.get(ij).p);
-														hull_points.add(intersections.get(jk).p);
-														hull_points.add(intersections.get(ik).p);
-														ArrayList<Double[]> hull = convexHull(hull_points);
-														if (!isInsideHull(hull, local_centroid))
-														{
-																intersections.get(ij).usable = false;
-																intersections.get(jk).usable = false;
-																intersections.get(ik).usable = true;
-														}
-												}
-												// else ik is not the closest, don't need to do anything
-										}
-										else
-										{
-												// ik is not inside hull
-												intersections.get(ik).usable = false;
+												Intersection intersection = lines.get(i).findIntersection(lines.get(j));
+												if (isInsideHull(previous_hull, intersection.p)) intersections.put(ij, intersection);
 										}
 								}
-								skip_level += 1;
-						} while ((skip_level + 1) <= wrappedIndexDistance(i, (i+1+skip_level) % N, N));
+						}
 				}
 
-				ArrayList<Double[]> points = new ArrayList<>();
+				// there must be at least 3 intersections available, otherwise truncate
+				if (intersections.size() < 3)
+				{
+						Log.i(logTag, "There are less than 3 possible vertices, truncating");
+						path_xy.add(local_centroid);
+						return;
+				}
+
+				// find intercept closest to center of hull
+				ArrayList<Intersection> hull_intersections = new ArrayList<>();
+				hull_intersections.add(null);
+				double min_dist_to_centroid = 9999999;
 				for (Intersection intersection : intersections.values())
 				{
-						if (intersection.usable) points.add(intersection.p);
+						if (intersection.usable
+										&& intersection.distance_to_center < min_dist_to_centroid)
+						{
+								min_dist_to_centroid = intersection.distance_to_center;
+								hull_intersections.set(0, intersection);
+						}
 				}
 
-				// if there aren't at least three accepted vertices truncate
+				// loop your way around, traveling on lines, always keeping a consistent clockwise motion
+				int junk = 0;
+				IntersectionMap next_possible_intersections;
+				do
+				{
+						Intersection last_intersection = hull_intersections.get(hull_intersections.size()-1);
+						// find all intercepts that share either i or j of current intercept
+						next_possible_intersections = intersections.sliceBySharedKey(
+										last_intersection,
+										hull_intersections);
+
+						// trim that down so that we maintain a negative cross-product sign
+						//      (i.e. if we started clockwise, do not consider intercepts that would be counterclockwise)
+						Line line1, line2;
+						double max_angle = -Math.PI;
+						// need to use iterators so we can remove map entries while looping through the map
+						for (Iterator<Map.Entry<Pair<Integer, Integer>, Intersection>> it =
+						     next_possible_intersections.entrySet().iterator(); it.hasNext();)
+						{
+								Map.Entry<Pair<Integer, Integer>, Intersection> entry = it.next();
+								if (hull_intersections.size() < 2)
+								{
+										// use centroid as first point
+										line1 = new Line(-1, local_centroid, last_intersection.p);
+								}
+								else
+								{
+										line1 = new Line(-1, hull_intersections.get(hull_intersections.size()-2).p, last_intersection.p);
+								}
+								line2 = new Line(-1, last_intersection.p, entry.getValue().p);
+								double cross = line1.cross(line2);
+								if (cross >= -0.01)
+								{
+										it.remove();
+										continue;
+								}
+
+								double angle = line1.incidentAngle(line2);
+								if (angle > max_angle) max_angle = angle;
+						}
+
+						// with the first point, we must also trim by min_angle
+						if (hull_intersections.size() < 2)
+						{
+								for (Iterator<Map.Entry<Pair<Integer, Integer>, Intersection>> it =
+								     next_possible_intersections.entrySet().iterator(); it.hasNext();)
+								{
+										Map.Entry<Pair<Integer, Integer>, Intersection> entry = it.next();
+
+										line1 = new Line(-1, local_centroid, last_intersection.p);
+										line2 = new Line(-1, last_intersection.p, entry.getValue().p);
+										double angle = line1.incidentAngle(line2);
+										if (!approxEq(angle, max_angle, 0.01))
+										{
+												it.remove();
+										}
+								}
+						}
+
+						if (next_possible_intersections.size() < 1) break;
+
+						// find the closest point and add it to hull
+						double dist = 9999999;
+						Intersection next_intersection = null;
+						for (Intersection intersection : next_possible_intersections.values())
+						{
+								double possible_dist = distance(last_intersection.p, intersection.p);
+								if (possible_dist < dist)
+								{
+										dist = possible_dist;
+										next_intersection = intersection;
+								}
+						}
+						hull_intersections.add(next_intersection);
+				} while (true);
+
+				ArrayList<Double[]> points = new ArrayList<>();
+				for (Intersection intersection : hull_intersections)
+				{
+						points.add(intersection.p);
+				}
+				// there must be at least 3 intersections available, otherwise truncate
 				if (points.size() < 3)
 				{
-						Log.i(logTag, "There are less than 3 accepted vertices, truncating");
+						Log.i(logTag, "There are less than 3 possible vertices, truncating");
 						path_xy.add(local_centroid);
 						return;
 				}
