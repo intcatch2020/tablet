@@ -9,6 +9,7 @@ import org.jscience.geography.coordinates.LatLong;
 import org.jscience.geography.coordinates.UTM;
 import org.jscience.geography.coordinates.crs.ReferenceEllipsoid;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -63,6 +64,25 @@ public class Region
 						double numerator = dot(d1p, dp);
 						double c = numerator/denominator;
 						return new Intersection(index, j.index, new Double[] {c*d2[0] + j.p1[0], c*d2[1] + j.p1[1]});
+				}
+
+				Intersection findIntersectionSegments(Line j)
+				{
+						// treat both lines as segments - only return an intersection if both segments actually contain the point
+						Intersection intersection = findIntersection(j);
+
+						// the sign of dot products will tell you if a point is on a line segment
+						// vector from intersection to line segment end points
+						// if the point is on the segment, the vectors will point in opposite directions (negative dot)
+						// if the point is not on the segment, the vectors will point in the same direction (positive dot)
+
+						// this line
+						if (Math.signum(dot(difference(intersection.p, p1), difference(intersection.p, p2))) > 0) return null;
+
+						// line j
+						if (Math.signum(dot(difference(intersection.p, j.p1), difference(intersection.p, j.p2))) > 0) return null;
+
+						return intersection;
 				}
 
 				double cross(Line j)
@@ -175,10 +195,7 @@ public class Region
 								break;
 
 						case LAWNMOWER:
-								// TODO: fit rectangle over hull (rotated to have long axis sitting on hull diameter)
-								// TODO: calculate equations for lines back and forth across this rectangle
-								// TODO: calculate intersections between hull and the lawnmower lines
-								// TODO: properly order the intersections to generate the lawnmower path
+								lawnMower(convex_xy);
 								break;
 
 						default:
@@ -617,6 +634,48 @@ public class Region
 						result.add(new Double[]{p[0] - utm_centroid[0], p[1] - utm_centroid[1]});
 				}
 				return result;
+		}
+
+		private void lawnMower(ArrayList<Double[]> hull)
+		{
+				// TODO: fit rectangle over hull (rotated to have long axis sitting on hull diameter)
+				// TODO:    a) find diameter of points
+				int[] diameter_pair_indices = diameterPair(hull);
+				Line diameter_line = new Line(0,
+								hull.get(diameter_pair_indices[0]), hull.get(diameter_pair_indices[1]));
+
+				// diameter points are included automatically
+				path_xy.add(hull.get(diameter_pair_indices[0]));
+				path_xy.add(hull.get(diameter_pair_indices[1]));
+
+				// TODO:    b) with line made from diameter pair, find point with most positive dot product
+				// TODO:        Need the normal unit vector of the diameter line
+
+
+				// TODO:    c) "", find point with most negative dot product
+				// TODO:    d) create line from most pos. and most neg. points, now the short axis of rectangle
+				// TODO:    e) Now we need lines for the edges so we can find intersections
+				// TODO:    f) create lines from the hull, just like with spiral
+				// TODO: calculate equations for lines back and forth across this rectangle
+				// TODO:    a) start from the diameter
+				// TODO:    b) while you haven't overshot yet, create a line from two points shifted by the positive transect distance
+				// TODO:    c) find the left intersection, then the right (next iteration find right then left)
+				// TODO:       NOTE the intersections are between the crossing line and the HULL lines!!!
+
+				// TODO:    HOW DO YOU FIND INTERSECTIONS WITH THE CORRECT HULL LINE?
+				// TODO:    Could create a more strict version of findIntersect that treats the lines as line segments,
+				// TODO:        only returning a result if the intersection is located within both segments.
+				// TODO:    In this manner, you would check for intersections with every hull line, and it should
+				// TODO:        return exactly two points (unless it matches with a vertex exactly).
+				// TODO:    Find the intersection closest to the most recent intersection, and add that first,
+				// TODO:        then the other to create the zig zag.
+
+				// TODO:    d) add these intersections onto the end of an array to create the back and forth motion
+				// TODO:    e) continue until the line would be outside of the rectangle. Add the most positive dot product point as a final.
+				// TODO:    f) next, starting at the diameter again, use the negative transect distance this and repeat the loop
+				// TODO:       but instead of putting intersections at the end of the array, put them at zero
+				// TODO:       OR flip the array and put them at the end
+				// TODO:    g) and finally, once you overshoot, add the most negative dot product point as the final point
 		}
 
 
