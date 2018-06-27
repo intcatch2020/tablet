@@ -378,7 +378,7 @@ public class Region
 				{
 						// first call: just add convex hull to path and recurse
 						path_xy.addAll(previous_hull);
-						path_xy.add(path_xy.get(0).clone()); // close the hull
+						//path_xy.add(path_xy.get(0).clone()); // close the hull
 						inwardNextHull(previous_hull, 1);
 						return; // recursion stack unravels here, so return, now with path_xy fully populated
 				}
@@ -554,13 +554,21 @@ public class Region
 				local_centroid = calculateCentroid(new_hull);
 				Log.i(logTag, String.format("New local centroid = [%.1f, %.1f]", local_centroid[0], local_centroid[1]));
 
-				// TODO: find point closest to first (and last) point in previous_hull
-				// TODO: shift new hull until you are one off from that
-				// TODO: this creates the spiral pattern we want
-
+				double dist = 9999999;
+				int closest_index = 0;
+				for (int i = 0; i < new_hull.size(); i++)
+				{
+						double possible_dist = distance(new_hull.get(i), previous_hull.get(previous_hull.size()-1));
+						if (possible_dist < dist)
+						{
+								dist = possible_dist;
+								closest_index = i;
+						}
+				}
+				new_hull = shiftArrayList(new_hull, -(closest_index+1));
 
 				path_xy.addAll(new_hull);
-				path_xy.add(new_hull.get(0).clone()); // close the hull before moving to inward hull
+				//path_xy.add(new_hull.get(0).clone()); // close the hull before moving to inward hull
 
 				inward_count += 1;
 				inwardNextHull(new_hull, inward_count);
