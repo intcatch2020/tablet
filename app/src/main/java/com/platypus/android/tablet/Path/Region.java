@@ -72,6 +72,12 @@ public class Region
 						return d1[0]*d2[1] - d2[0]*d1[1];
 				}
 
+				double angle()
+				{
+						Double[] diff = difference(p1, p2);
+						return Math.atan2(diff[1], diff[0]);
+				}
+
 				double length()
 				{
 						return distance(p1, p2);
@@ -79,7 +85,7 @@ public class Region
 
 				double incidentAngle(Line j)
 				{
-						return Math.asin(cross(j)/(length()*j.length()));
+						return wrapToPi(angle()-j.angle());
 				}
 		}
 
@@ -480,21 +486,26 @@ public class Region
 								if (angle > max_angle) max_angle = angle;
 						}
 
-						// with the first point, we must also trim by min_angle
-						if (hull_intersections.size() < 2)
+						// also trim by angle
+						for (Iterator<Map.Entry<Pair<Integer, Integer>, Intersection>> it =
+						     next_possible_intersections.entrySet().iterator(); it.hasNext();)
 						{
-								for (Iterator<Map.Entry<Pair<Integer, Integer>, Intersection>> it =
-								     next_possible_intersections.entrySet().iterator(); it.hasNext();)
-								{
-										Map.Entry<Pair<Integer, Integer>, Intersection> entry = it.next();
+								Map.Entry<Pair<Integer, Integer>, Intersection> entry = it.next();
 
+								if (hull_intersections.size() < 2)
+								{
+										// use centroid as first point
 										line1 = new Line(-1, local_centroid, last_intersection.p);
-										line2 = new Line(-1, last_intersection.p, entry.getValue().p);
-										double angle = line1.incidentAngle(line2);
-										if (!approxEq(angle, max_angle, 0.01))
-										{
-												it.remove();
-										}
+								}
+								else
+								{
+										line1 = new Line(-1, hull_intersections.get(hull_intersections.size()-2).p, last_intersection.p);
+								}
+								line2 = new Line(-1, last_intersection.p, entry.getValue().p);
+								double angle = line1.incidentAngle(line2);
+								if (!approxEq(angle, max_angle, 0.01))
+								{
+										it.remove();
 								}
 						}
 
@@ -543,10 +554,10 @@ public class Region
 				local_centroid = calculateCentroid(new_hull);
 				Log.i(logTag, String.format("New local centroid = [%.1f, %.1f]", local_centroid[0], local_centroid[1]));
 
-
 				// TODO: find point closest to first (and last) point in previous_hull
 				// TODO: shift new hull until you are one off from that
 				// TODO: this creates the spiral pattern we want
+
 
 				path_xy.addAll(new_hull);
 				path_xy.add(new_hull.get(0).clone()); // close the hull before moving to inward hull
