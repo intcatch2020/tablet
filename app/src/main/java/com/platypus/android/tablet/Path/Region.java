@@ -268,7 +268,16 @@ public class Region
 		}
 		private double dot(Double[] a, Double[] b)
 		{
+				// a and b represent vector component magnitudes
 				return a[0]*b[0] + a[1]*b[1];
+		}
+
+		private double dotNormalized(Double[] a, Double[] b)
+		{
+				// a and b represent vector component magnitudes
+				double lengthA = Math.sqrt(Math.pow(a[0], 2.) + Math.pow(a[1], 2.));
+				double lengthB = Math.sqrt(Math.pow(b[0], 2.) + Math.pow(b[1], 2.));
+				return dot(a, b)/(lengthA*lengthB);
 		}
 
 		private double distanceToCentroid(Double[] a)
@@ -381,6 +390,18 @@ public class Region
 						Double[] b = points.get(j);
 						double raw_angle = Math.atan2(b[1]-a[1], b[0]-a[0]) + Math.PI/2.0;
 						result.add(wrapToPi(raw_angle));
+				}
+				return result;
+		}
+
+		private ArrayList<Double[]> unitNormalVector(ArrayList<Double[]> points)
+		{
+				ArrayList<Double> normal_angles = lineSegmentNormalAngles(points);
+				ArrayList<Double[]> result = new ArrayList<>();
+				for (int i = 0; i < points.size(); i++)
+				{
+						double angle = normal_angles.get(i);
+						result.add(new Double[] {Math.cos(angle), Math.sin(angle)});
 				}
 				return result;
 		}
@@ -640,22 +661,65 @@ public class Region
 		{
 				// TODO: fit rectangle over hull (rotated to have long axis sitting on hull diameter)
 				// TODO:    a) find diameter of points
+				int N = hull.size();
 				int[] diameter_pair_indices = diameterPair(hull);
-				Line diameter_line = new Line(0,
-								hull.get(diameter_pair_indices[0]), hull.get(diameter_pair_indices[1]));
-
-				// diameter points are included automatically
-				path_xy.add(hull.get(diameter_pair_indices[0]));
-				path_xy.add(hull.get(diameter_pair_indices[1]));
+				ArrayList<Double[]> diameter_pair = new ArrayList<>();
+				diameter_pair.add(hull.get(diameter_pair_indices[0]));
+				diameter_pair.add(hull.get(diameter_pair_indices[1]));
+				path_xy.addAll(diameter_pair); // diameter points are included automatically
 
 				// TODO:    b) with line made from diameter pair, find point with most positive dot product
 				// TODO:        Need the normal unit vector of the diameter line
-
-
 				// TODO:    c) "", find point with most negative dot product
-				// TODO:    d) create line from most pos. and most neg. points, now the short axis of rectangle
-				// TODO:    e) Now we need lines for the edges so we can find intersections
-				// TODO:    f) create lines from the hull, just like with spiral
+				Line diameter_line = new Line(0,
+								hull.get(diameter_pair_indices[0]), hull.get(diameter_pair_indices[1]));
+				ArrayList<Double[]> diameter_normal_ = unitNormalVector(diameter_pair);
+				Double[] diameter_normal = diameter_normal_.get(0);
+
+				double most_positive_dot = -1;
+				double most_negative_dot = 1;
+				Double[] most_positive = null;
+				Double[] most_negative = null;
+				Double[] diameter_midpoint = new Double[]{
+								0.5*(diameter_line.p1[0] + diameter_line.p2[0]),
+								0.5*(diameter_line.p1[1] + diameter_line.p2[1])};
+				for (int i = 0; i < N; i++)
+				{
+						double dotn = dotNormalized(diameter_normal, difference(diameter_midpoint, hull.get(i)));
+						if (dotn > most_positive_dot)
+						{
+								most_positive_dot = dotn;
+								most_positive = hull.get(i);
+						}
+						else if (dotn < most_negative_dot)
+						{
+								most_negative_dot = dotn;
+								most_negative = hull.get(i);
+						}
+				}
+
+				double diameter_line_angle = Math.atan2(diameter_line.p2[1]-diameter_line.p1[1],
+								diameter_line.p2[0]-diameter_line.p1[0]);
+				double positive_line_angle = Math.atan2(most_positive[1]-diameter_line.p1[1],
+								most_positive[0]-diameter_line.p1[0]);
+				double negative_line_angle = Math.atan2(most_negative[1]-diameter_line.p1[1],
+								most_negative[0]-diameter_line.p1[0]);
+
+				double positive_distance = Math.abs(distance(diameter_line.p1, most_positive)
+								*Math.sin(positive_line_angle - diameter_line_angle));
+				double negative_distance = -1*Math.abs(distance(diameter_line.p1, most_negative)
+								*Math.sin(negative_line_angle - diameter_line_angle));
+
+				// TODO:    d) create lines from the hull, just like with spiral
+				ArrayList<Line> hull_lines = new ArrayList<>();
+				for (int i = 0; i < N; i++)
+				{
+						Double[] p1 = hull.get(i);
+						int j = (i+1) % N; // wrap the index
+						Double[] p2 = hull.get(j);
+						hull_lines.add(new Line(i, p1, p2));
+				}
+
 				// TODO: calculate equations for lines back and forth across this rectangle
 				// TODO:    a) start from the diameter
 				// TODO:    b) while you haven't overshot yet, create a line from two points shifted by the positive transect distance
@@ -676,6 +740,47 @@ public class Region
 				// TODO:       but instead of putting intersections at the end of the array, put them at zero
 				// TODO:       OR flip the array and put them at the end
 				// TODO:    g) and finally, once you overshoot, add the most negative dot product point as the final point
+
+				// positive loop
+				double shift_distance = transect_distance;
+				do
+				{
+						// shift diameter
+						Double[] dilated_normal_vector = new Double[]{
+										shift_distance*diameter_normal[0],
+										shift_distance*diameter_normal[1]};
+
+						Line shifted_diameter = new Line(0,
+										new Double[]{diameter_line.p1[0] + dilated_normal_vector[0], diameter_line.p1[1] + dilated_normal_vector[1]},
+										new Double[]{diameter_line.p2[0] + dilated_normal_vector[0], diameter_line.p2[1] + dilated_normal_vector[1]});
+
+						ArrayList<Double[]> path = new ArrayList<>();
+
+						for (Line hull_line : hull_lines)
+						{
+								Intersection intersection = null;
+								intersection = shifted_diameter.findIntersectionSegments(hull_line);
+								if (intersection != null) path.add(intersection.p);
+						}
+
+						// find the point closer to the last point in path_xy
+						// NOTE: assumes that you only exactly two intersections!
+						if (distance(path.get(0), path_xy.get(path_xy.size()-1)) < distance(path.get(1), path_xy.get(path_xy.size()-1)))
+						{
+								path_xy.add(path.get(0));
+								path_xy.add(path.get(1));
+						}
+						else
+						{
+								path_xy.add(path.get(1));
+								path_xy.add(path.get(0));
+						}
+
+						shift_distance += transect_distance;
+				} while (shift_distance < positive_distance);
+				path_xy.add(most_positive);
+
+				// negative loop
 		}
 
 
