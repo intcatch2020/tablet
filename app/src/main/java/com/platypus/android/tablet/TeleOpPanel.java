@@ -179,6 +179,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 		Button spiral_button = null;
 		Button lawnmower_button = null;
 		Button reverse_order_button = null;
+		Button simple_path_button = null;
 		Button jar1_button = null;
 		Button jar2_button = null;
 		Button jar3_button = null;
@@ -571,8 +572,9 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 		}
 		void replaceWaypointMarkers(ArrayList<LatLng> new_points)
 		{
+				ArrayList<LatLng> temp = (ArrayList<LatLng>)new_points.clone();
 				clearWaypointMarkers();
-				addWaypointMarkers(new_points);
+				addWaypointMarkers(temp);
 		}
 
 		protected void onCreate(final Bundle savedInstanceState)
@@ -624,6 +626,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 				spiral_button = (Button) this.findViewById(R.id.spiral_button);
 				lawnmower_button = (Button) this.findViewById(R.id.lawnmower_button);
 				reverse_order_button = (Button) this.findViewById(R.id.reverse_order_button);
+				simple_path_button = (Button) this.findViewById(R.id.simple_path_button);
 
 				jar1_button = (Button) this.findViewById(R.id.jar1_button);
 				jar2_button = (Button) this.findViewById(R.id.jar2_button);
@@ -1272,6 +1275,22 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 										Collections.reverse(waypoint_list);
 										ArrayList<LatLng> temp = (ArrayList<LatLng>)waypoint_list.clone(); // shallow copy
 										replaceWaypointMarkers(temp);
+								}
+						}
+				});
+
+				simple_path_button.setOnClickListener(new OnClickListener()
+				{
+						@Override
+						public void onClick(View v)
+						{
+								if (unowned_path.getPoints().size() > 2)
+								{
+										replaceWaypointMarkers(unowned_path.getPoints());
+								}
+								else
+								{
+										Toast.makeText(context, "Generate a path with at least 3 waypoints first", Toast.LENGTH_SHORT).show();
 								}
 						}
 				});
