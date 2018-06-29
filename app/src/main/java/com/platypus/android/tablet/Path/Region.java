@@ -9,7 +9,6 @@ import org.jscience.geography.coordinates.LatLong;
 import org.jscience.geography.coordinates.UTM;
 import org.jscience.geography.coordinates.crs.ReferenceEllipsoid;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -676,8 +675,8 @@ public class Region
 				ArrayList<Double[]> diameter_normal_ = unitNormalVector(diameter_pair);
 				Double[] diameter_normal = diameter_normal_.get(0);
 
-				double most_positive_dot = -1;
-				double most_negative_dot = 1;
+				double most_positive_dot = 0.01;
+				double most_negative_dot = -0.01;
 				Double[] most_positive = null;
 				Double[] most_negative = null;
 				Double[] diameter_midpoint = new Double[]{
@@ -700,15 +699,38 @@ public class Region
 
 				double diameter_line_angle = Math.atan2(diameter_line.p2[1]-diameter_line.p1[1],
 								diameter_line.p2[0]-diameter_line.p1[0]);
-				double positive_line_angle = Math.atan2(most_positive[1]-diameter_line.p1[1],
-								most_positive[0]-diameter_line.p1[0]);
-				double negative_line_angle = Math.atan2(most_negative[1]-diameter_line.p1[1],
-								most_negative[0]-diameter_line.p1[0]);
 
-				double positive_distance = Math.abs(distance(diameter_line.p1, most_positive)
-								*Math.sin(positive_line_angle - diameter_line_angle));
-				double negative_distance = -1*Math.abs(distance(diameter_line.p1, most_negative)
-								*Math.sin(negative_line_angle - diameter_line_angle));
+				boolean positive_loop_finished = false;
+				boolean negative_loop_finished = false;
+				double positive_line_angle, negative_line_angle;
+				double positive_distance = 0;
+				double negative_distance = 0;
+
+				// triangles mean the diameter is also one of the edges,
+				// so one of positive or negative directions must not occur
+				if (most_positive == null)
+				{
+						positive_loop_finished = true;
+				}
+				else
+				{
+						positive_line_angle = Math.atan2(most_positive[1]-diameter_line.p1[1],
+										most_positive[0]-diameter_line.p1[0]);
+						positive_distance = Math.abs(distance(diameter_line.p1, most_positive)
+										*Math.sin(positive_line_angle - diameter_line_angle));
+				}
+
+				if (most_negative == null)
+				{
+						negative_loop_finished = true;
+				}
+				else
+				{
+						negative_line_angle = Math.atan2(most_negative[1]-diameter_line.p1[1],
+										most_negative[0]-diameter_line.p1[0]);
+						negative_distance = Math.abs(distance(diameter_line.p1, most_negative)
+										*Math.sin(negative_line_angle - diameter_line_angle));
+				}
 
 				// TODO:    d) create lines from the hull, just like with spiral
 				ArrayList<Line> hull_lines = new ArrayList<>();
@@ -741,7 +763,6 @@ public class Region
 				// TODO:       OR flip the array and put them at the end
 				// TODO:    g) and finally, once you overshoot, add the most negative dot product point as the final point
 
-				// positive loop
 				double shift_distance = transect_distance;
 				do
 				{
@@ -750,37 +771,70 @@ public class Region
 										shift_distance*diameter_normal[0],
 										shift_distance*diameter_normal[1]};
 
-						Line shifted_diameter = new Line(0,
+						Line positive_shifted_diameter = new Line(0,
 										new Double[]{diameter_line.p1[0] + dilated_normal_vector[0], diameter_line.p1[1] + dilated_normal_vector[1]},
 										new Double[]{diameter_line.p2[0] + dilated_normal_vector[0], diameter_line.p2[1] + dilated_normal_vector[1]});
+						Line negative_shifted_diameter = new Line(0,
+										new Double[]{diameter_line.p1[0] - dilated_normal_vector[0], diameter_line.p1[1] - dilated_normal_vector[1]},
+										new Double[]{diameter_line.p2[0] - dilated_normal_vector[0], diameter_line.p2[1] - dilated_normal_vector[1]});
 
-						ArrayList<Double[]> path = new ArrayList<>();
-
-						for (Line hull_line : hull_lines)
+						if (!positive_loop_finished)
 						{
-								Intersection intersection = null;
-								intersection = shifted_diameter.findIntersectionSegments(hull_line);
-								if (intersection != null) path.add(intersection.p);
+								ArrayList<Double[]> positive_path = new ArrayList<>();
+								for (Line hull_line : hull_lines)
+								{
+										Intersection intersection;
+										intersection = positive_shifted_diameter.findIntersectionSegments(hull_line);
+										if (intersection != null) positive_path.add(intersection.p);
+								}
+								// find the point closer to the last point in path_xy
+								if (positive_path.size() == 2)
+								{
+										if (distance(positive_path.get(0), path_xy.get(path_xy.size() - 1)) < distance(positive_path.get(1), path_xy.get(path_xy.size() - 1)))
+										{
+												path_xy.add(positive_path.get(0));
+												path_xy.add(positive_path.get(1));
+										}
+										else
+										{
+												path_xy.add(positive_path.get(1));
+												path_xy.add(positive_path.get(0));
+										}
+								}
 						}
-
-						// find the point closer to the last point in path_xy
-						// NOTE: assumes that you only exactly two intersections!
-						if (distance(path.get(0), path_xy.get(path_xy.size()-1)) < distance(path.get(1), path_xy.get(path_xy.size()-1)))
+						if (!negative_loop_finished)
 						{
-								path_xy.add(path.get(0));
-								path_xy.add(path.get(1));
-						}
-						else
-						{
-								path_xy.add(path.get(1));
-								path_xy.add(path.get(0));
+								ArrayList<Double[]> negative_path = new ArrayList<>();
+								for (Line hull_line : hull_lines)
+								{
+										Intersection intersection;
+										intersection = negative_shifted_diameter.findIntersectionSegments(hull_line);
+										if (intersection != null) negative_path.add(intersection.p);
+								}
+								// find the point closer to the first point in path_xy
+								if (negative_path.size() == 2)
+								{
+										if (distance(negative_path.get(0), path_xy.get(0)) < distance(negative_path.get(1), path_xy.get(0)))
+										{
+												path_xy.add(0, negative_path.get(0));
+												path_xy.add(0, negative_path.get(1));
+										}
+										else
+										{
+												path_xy.add(0, negative_path.get(1));
+												path_xy.add(0, negative_path.get(0));
+										}
+								}
 						}
 
 						shift_distance += transect_distance;
-				} while (shift_distance < positive_distance);
-				path_xy.add(most_positive);
 
-				// negative loop
+						if (!positive_loop_finished && shift_distance >= positive_distance) positive_loop_finished = true;
+						if (!negative_loop_finished && shift_distance >= negative_distance) negative_loop_finished = true;
+				} while (!positive_loop_finished || !negative_loop_finished);
+
+				if (most_positive != null) path_xy.add(most_positive);
+				if (most_negative != null) path_xy.add(0, most_negative);
 		}
 
 
