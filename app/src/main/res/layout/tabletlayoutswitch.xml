@@ -389,6 +389,7 @@
                 android:layout_below="@id/undo_last_wp_button"
                 android:layout_alignParentRight="true"
                 android:layout_marginRight="5dp"
+                android:layout_marginBottom="15dp"
                 android:background="@drawable/lawnmower"/>
 
             <Button
@@ -398,6 +399,14 @@
                 android:layout_below="@id/path_button"
                 android:layout_alignParentLeft="true"
                 android:background="@drawable/reverse_order"/>
+
+            <Button
+                android:id="@+id/simple_path_button"
+                android:layout_width="100dp"
+                android:layout_height="50dp"
+                android:background="@drawable/simple_path_button"
+                android:layout_below="@id/lawnmower_button"
+                android:layout_alignParentRight="true"/>
 
         </RelativeLayout>
 

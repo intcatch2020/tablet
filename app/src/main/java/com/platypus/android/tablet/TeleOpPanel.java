@@ -180,6 +180,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 		Button spiral_button = null;
 		Button lawnmower_button = null;
 		Button reverse_order_button = null;
+		Button simple_path_button = null;
 		Button jar1_button = null;
 		Button jar2_button = null;
 		Button jar3_button = null;
@@ -570,8 +571,9 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 		}
 		void replaceWaypointMarkers(ArrayList<LatLng> new_points)
 		{
+				ArrayList<LatLng> temp = (ArrayList<LatLng>)new_points.clone();
 				clearWaypointMarkers();
-				addWaypointMarkers(new_points);
+				addWaypointMarkers(temp);
 		}
 
 		protected void onCreate(final Bundle savedInstanceState)
@@ -623,6 +625,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 				spiral_button = (Button) this.findViewById(R.id.spiral_button);
 				lawnmower_button = (Button) this.findViewById(R.id.lawnmower_button);
 				reverse_order_button = (Button) this.findViewById(R.id.reverse_order_button);
+				simple_path_button = (Button) this.findViewById(R.id.simple_path_button);
 
 				jar1_button = (Button) this.findViewById(R.id.jar1_button);
 				jar2_button = (Button) this.findViewById(R.id.jar2_button);
@@ -1199,7 +1202,16 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 								removeWaypaths("");
 								if (waypoint_list.size() > 2)
 								{
-										unowned_path = new Region((ArrayList<LatLng>)waypoint_list.clone(), AreaType.SPIRAL, currentTransectDist);
+										try
+										{
+												Region region = new Region((ArrayList<LatLng>) waypoint_list.clone(), AreaType.SPIRAL, currentTransectDist);
+												unowned_path = region.convertToSimplePath();
+										}
+										catch (Exception e)
+										{
+												Log.e(logTag, String.format("Generating spiral error: %s", e.getMessage()));
+												return;
+										}
 										addWaypaths("");
 										calculatePathDistance();
 								}
@@ -1230,7 +1242,16 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 								removeWaypaths("");
 								if (waypoint_list.size() > 2)
 								{
-										unowned_path = new Region((ArrayList<LatLng>)waypoint_list.clone(), AreaType.LAWNMOWER, currentTransectDist);
+										try
+										{
+												Region region = new Region((ArrayList<LatLng>) waypoint_list.clone(), AreaType.LAWNMOWER, currentTransectDist);
+												unowned_path = region.convertToSimplePath();
+										}
+										catch (Exception e)
+										{
+												Log.e(logTag, String.format("Generating lawnmower error: %s", e.getMessage()));
+												return;
+										}
 										addWaypaths("");
 										calculatePathDistance();
 								}
@@ -1253,6 +1274,22 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 										Collections.reverse(waypoint_list);
 										ArrayList<LatLng> temp = (ArrayList<LatLng>)waypoint_list.clone(); // shallow copy
 										replaceWaypointMarkers(temp);
+								}
+						}
+				});
+
+				simple_path_button.setOnClickListener(new OnClickListener()
+				{
+						@Override
+						public void onClick(View v)
+						{
+								if (unowned_path.getPoints().size() > 2)
+								{
+										replaceWaypointMarkers(unowned_path.getPoints());
+								}
+								else
+								{
+										Toast.makeText(context, "Generate a path with at least 3 waypoints first", Toast.LENGTH_SHORT).show();
 								}
 						}
 				});
@@ -2002,12 +2039,12 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 								if (wp_index > i + 1 || (owned && wp_index == -1))
 								{
 										top.add(mMapboxMap.addPolyline(new PolylineOptions().addAll(pair).color(Color.GRAY).width(4)));
-										Log.d(logTag, String.format("line i = %d, current_waypoint = %d, GRAY", i, wp_index));
+										Log.v(logTag, String.format("line i = %d, current_waypoint = %d, GRAY", i, wp_index));
 								}
 								else
 								{
 										top.add(mMapboxMap.addPolyline(new PolylineOptions().addAll(pair).color(color).width(4)));
-										Log.d(logTag, String.format("line i = %d, current_waypoint = %d, COLORED", i, wp_index));
+										Log.v(logTag, String.format("line i = %d, current_waypoint = %d, COLORED", i, wp_index));
 								}
 						}
 				}
