@@ -7,6 +7,7 @@ import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.platypus.crw.CrumbListener;
 import com.platypus.crw.FunctionObserver;
 import com.platypus.crw.PoseListener;
+import com.platypus.crw.RCOverrideListener;
 import com.platypus.crw.SensorListener;
 import com.platypus.crw.VehicleServer;
 import com.platypus.crw.WaypointListener;
@@ -36,6 +37,7 @@ public class RealBoat extends Boat
 		private SensorListener sl;
 		private WaypointListener wl;
 		private CrumbListener cl;
+		private RCOverrideListener rcol;
 		private final int CONNECTION_POLL_S = 3;
 		private final int WAYPOINTS_INDEX_POLL_S = 1;
 
@@ -104,7 +106,8 @@ public class RealBoat extends Boat
 		public void createListeners(final Runnable poseListenerCallback,
 		                            final Runnable sensorListenerCallback,
 		                            final Runnable waypointListenerCallback,
-		                            final Runnable crumbListenerCallback)
+		                            final Runnable crumbListenerCallback,
+		                            final Runnable rcOverrideListenerCallback)
 		{
 				pl = new PoseListener()
 				{
@@ -189,6 +192,16 @@ public class RealBoat extends Boat
 								}
 						}
 				};
+				rcol = new RCOverrideListener()
+				{
+						@Override
+						public void rcOverrideUpdate(boolean b)
+						{
+								setConnected(true);
+								rc_override_is_on.set(b);
+								uiHandler.post(rcOverrideListenerCallback); // update GUI with result
+						}
+				};
 				try
 				{
 						if (pl != null)
@@ -233,6 +246,17 @@ public class RealBoat extends Boat
 								{
 										@Override
 										public void completed(Void aVoid) { Log.i(logTag, "add crumb listener"); }
+
+										@Override
+										public void failed(FunctionError functionError) { }
+								});
+						}
+						if (rcol != null)
+						{
+								server.addRCOverrideListener(rcol, new FunctionObserver<Void>()
+								{
+										@Override
+										public void completed(Void aVoid) { Log.i(logTag, "add rc override listener"); }
 
 										@Override
 										public void failed(FunctionError functionError) { }

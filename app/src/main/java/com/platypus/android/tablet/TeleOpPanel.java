@@ -1,33 +1,21 @@
 package com.platypus.android.tablet;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.Scanner;
 
 import javax.measure.unit.NonSI;
-import javax.measure.unit.SI;
 
 import org.jscience.geography.coordinates.LatLong;
 import org.jscience.geography.coordinates.UTM;
 import org.jscience.geography.coordinates.crs.ReferenceEllipsoid;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.json.JSONTokener;
 
-import com.google.gson.Gson;
 import com.mapbox.mapboxsdk.Mapbox;
 import com.mapbox.mapboxsdk.annotations.MarkerView;
 import com.mapbox.mapboxsdk.annotations.MarkerViewOptions;
@@ -37,7 +25,6 @@ import com.mapbox.mapboxsdk.camera.CameraPosition;
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
 import com.mapbox.mapboxsdk.constants.Style;
 import com.mapbox.mapboxsdk.geometry.LatLng;
-import com.mapbox.mapboxsdk.geometry.ILatLng;
 import com.mapbox.mapboxsdk.annotations.Marker;
 import com.mapbox.mapboxsdk.annotations.MarkerOptions;
 import com.mapbox.mapboxsdk.annotations.Icon;
@@ -69,7 +56,6 @@ import android.support.annotation.LayoutRes;
 import android.support.annotation.NonNull;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.ContextCompat;
-import android.util.JsonReader;
 import android.view.MenuItem;
 import android.view.View;
 
@@ -77,9 +63,9 @@ import com.platypus.android.tablet.Path.AreaType;
 import com.platypus.android.tablet.Path.Path;
 import com.platypus.android.tablet.Path.Region;
 import com.platypus.crw.CrwNetworkUtils;
+import com.platypus.crw.RCOverrideListener;
 import com.platypus.crw.VehicleServer;
 import com.platypus.crw.data.SensorData;
-import com.platypus.crw.data.Pose3D;
 
 import android.app.Activity;
 import android.content.Context;
@@ -97,16 +83,12 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.EditText;
-import android.widget.ListView;
 import android.widget.PopupMenu;
 import android.widget.RadioButton;
 import android.widget.RelativeLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import com.platypus.crw.data.Utm;
-import com.platypus.crw.data.UtmPose;
 
 import android.app.Dialog;
 
@@ -199,6 +181,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 		TextView battery_value = null;
 		TextView waypointInfo = null;
 		TextView path_length_value = null;
+		TextView rc_override_warning = null;
 
 		JoystickView joystick;
 		private boolean speed_spinner_erroneous_call = true;
@@ -375,7 +358,8 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 								new BoatMarkerUpdateRunnable(newBoat),
 								new SensorDataReceivedRunnable(newBoat),
 								new WaypointStateReceivedRunnable(newBoat),
-								new CrumbReceivedRunnable(newBoat));
+								new CrumbReceivedRunnable(newBoat),
+								new RCOverrideUpdateRunnable(newBoat));
 				boats_map.put(boat_name, newBoat);
 		}
 		class BoatMarkerUpdateRunnable implements Runnable
@@ -431,7 +415,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 				Boat boat;
 				String name;
 				SensorData lastReceived;
-				public SensorDataReceivedRunnable(Boat _boat)
+				SensorDataReceivedRunnable(Boat _boat)
 				{
 						boat = _boat;
 						name = boat.getName();
@@ -466,7 +450,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 		{
 				Boat boat;
 				String name;
-				public WaypointStateReceivedRunnable(Boat _boat)
+				WaypointStateReceivedRunnable(Boat _boat)
 				{
 						boat = _boat;
 						name = boat.getName();
@@ -490,7 +474,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 				String name;
 				LatLng crumb;
 				Icon icon;
-				public CrumbReceivedRunnable(Boat _boat)
+				CrumbReceivedRunnable(Boat _boat)
 				{
 						Log.i("ODE", "CrumbReceivedRunnable constructor");
 						boat = _boat;
@@ -507,6 +491,34 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 						String title = "crumb_" + Integer.toString(size);
 						crumb_markers_map.get(name).add(mMapboxMap.addMarker(new MarkerOptions().position(crumb).icon(icon).title(title)));
 						marker_types_map.put(title, PlatypusMarkerTypes.BREADCRUMB);
+				}
+		}
+
+		class RCOverrideUpdateRunnable implements Runnable
+		{
+				Boat boat;
+				String name;
+				RCOverrideUpdateRunnable(Boat _boat)
+				{
+						boat = _boat;
+						name = boat.getName();
+				}
+				@Override
+				public void run()
+				{
+						boolean rc_override_on = boat.isRCOverrideOn();
+						if (rc_override_on)
+						{
+								// make big red text appear at the top of the app
+								rc_override_warning.setText("RC OVERRIDE IS ON");
+								rc_override_warning.setTextColor(Color.RED);
+								rc_override_warning.setTextSize(30);
+						}
+						else
+						{
+								// make sure no big red text is showing
+								rc_override_warning.setText("");
+						}
 				}
 		}
 
@@ -645,6 +657,8 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 				jar2_text.setTextIsSelectable(false);
 				jar3_text.setTextIsSelectable(false);
 				jar4_text.setTextIsSelectable(false);
+
+				rc_override_warning = (TextView) this.findViewById(R.id.rc_override_warning);
 
 				alarm_ringtone = RingtoneManager.getRingtone(getApplicationContext(), alarmUri);
 				notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);

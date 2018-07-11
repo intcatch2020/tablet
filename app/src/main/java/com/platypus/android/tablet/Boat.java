@@ -38,6 +38,7 @@ public abstract class Boat
 		AtomicBoolean connected = new AtomicBoolean(false);
 		AtomicBoolean autonomous = new AtomicBoolean(false);
 		AtomicBoolean sensors_ready = new AtomicBoolean(false);
+		AtomicBoolean rc_override_is_on = new AtomicBoolean(false);
 		AtomicInteger current_waypoint_index = new AtomicInteger(-1);
 		String logTag = "Boat"; //Boat.class.getName();
 		LatLng currentLocation = null;
@@ -68,7 +69,8 @@ public abstract class Boat
 						final Runnable poseListenerCallback,
 						final Runnable sensorListenerCallback,
 						final Runnable waypointListenerCallback,
-						final Runnable crumbListenerCallback);
+						final Runnable crumbListenerCallback,
+						final Runnable rcOverrideListenerCallback);
 		abstract public void startWaypoints(final double[][] waypoints, final Runnable failureCallback);
 		abstract public void stopWaypoints(final Runnable failureCallback);
 		abstract public void updateControlSignals(final double thrust, final double heading, final Runnable failureCallback);
@@ -150,6 +152,8 @@ public abstract class Boat
 		{
 				return connected.get();
 		}
+
+		boolean isRCOverrideOn() { return rc_override_is_on.get(); }
 
 		LatLng getLocation()
 		{
