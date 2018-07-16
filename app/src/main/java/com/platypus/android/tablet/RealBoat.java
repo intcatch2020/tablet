@@ -38,7 +38,7 @@ public class RealBoat extends Boat
 		private WaypointListener wl;
 		private CrumbListener cl;
 		private RCOverrideListener rcol;
-		private final int CONNECTION_POLL_S = 3;
+		private final int CONNECTION_POLL_S = 1;
 		private final int WAYPOINTS_INDEX_POLL_S = 1;
 
 		public RealBoat(String boat_name)
@@ -52,7 +52,7 @@ public class RealBoat extends Boat
 				@Override
 				public void run()
 				{
-						if (System.currentTimeMillis() - time_of_last_connection.get() > 1000)
+						if (System.currentTimeMillis() - time_of_last_connection.get() > 500)
 						{
 								server.isConnected(new FunctionObserver<Boolean>()
 								{
@@ -67,13 +67,13 @@ public class RealBoat extends Boat
 										public void failed(FunctionError functionError)
 										{
 												Log.w(logTag, String.format("isConnected() did not return"));
-												connected.set(false);
+												setConnected(false);
 										}
 								});
 						}
 						else
 						{
-								connected.set(true); // do not update time of last connection
+								connected.set(true); // do not update time of last connection!
 								Log.i(logTag, "skipping isConnected() due to recent traffic");
 						}
 				}

@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.measure.unit.NonSI;
 
@@ -251,6 +252,8 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 		Double[] tablet_latlng = new Double[] {0.0, 0.0};
 		boolean tablet_gps_fix = false;
 		MarkerViewOptions tablet_location_markerviewoptions = null;
+		double distance_to_current_boat;
+		AtomicBoolean current_boat_is_connected = new AtomicBoolean(false);
 
 		int boat_color_count = 0;
 		Map<Integer, Map<String, Integer>> color_map = new HashMap<>();
@@ -724,6 +727,8 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 										sensor_stuff.newSensorSet(); // clear the sensor text data
 										waypointInfo.setText("");
 										battery_value.setText("");
+
+										current_boat_is_connected.set(boat.isConnected());
 								}
 						}
 
@@ -851,6 +856,23 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 								if (boat != null)
 								{
 										boolean isConnected = boat.isConnected();
+
+										if (isConnected != current_boat_is_connected.get())
+										{
+												// TODO: status has changed, log event
+												String status;
+												if (isConnected)
+												{
+														status = "connected";
+												}
+												else
+												{
+														status = "disconnected";
+												}
+												Log.w(logTag, String.format("Connection to \"%s\" changed, now %s", boat.getName(), status));
+										}
+										current_boat_is_connected.set(isConnected);
+
 										if (isConnected)
 										{
 												ipAddressBox.setBackgroundColor(Color.GREEN);
@@ -864,7 +886,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 								{
 										ipAddressBox.setBackgroundColor(Color.RED);
 								}
-								uiHandler.postDelayed(this, 1000);
+								uiHandler.postDelayed(this, 500);
 						}
 				});
 

@@ -145,7 +145,7 @@ public abstract class Boat
 		void setConnected(boolean b)
 		{
 				connected.set(b);
-				time_of_last_connection.set(System.currentTimeMillis());
+				if (b) time_of_last_connection.set(System.currentTimeMillis());
 		}
 
 		boolean isConnected()
