@@ -1746,6 +1746,13 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 														Drawable home = getResources().getDrawable(R.drawable.home_white, null);
 														int boat_color = boat.getBoatColor();
 
+														if (home_markers_map.containsKey(boat_name))
+														{
+																Log.i(logTag, String.format("clearing old home for boat \"%s\"", boat_name));
+																mMapboxMap.removeAnnotation(home_markers_map.get(boat_name).getMarker());
+																home_markers_map.remove(boat_name);
+														}
+
 														home_markers_map.put(boat_name, new MarkerViewOptions()
 																		.position(point)
 																		.title(boat_name + "_home")
