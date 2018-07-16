@@ -10,5 +10,6 @@ public enum PlatypusMarkerTypes
 		WAYPOINT,
 		HOME,
 		BREADCRUMB,
-		SENSORDATA
+		SENSORDATA,
+		OPERATOR
 }

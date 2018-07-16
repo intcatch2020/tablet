@@ -486,10 +486,20 @@
                 style="?android:attr/buttonStyleSmall"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:id="@+id/centermap"
-                android:text="Center"
+                android:id="@+id/center_on_boat_button"
+                android:text="Center on boat"
                 android:layout_alignTop="@id/mapview"
                 android:layout_alignLeft="@id/mapview"/>
+
+            <Button
+                style="?android:attr/buttonStyleSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/center_on_operator_button"
+                android:text="Center on tablet"
+                android:layout_alignLeft="@id/mapview"
+                android:layout_below="@id/center_on_boat_button"
+                android:layout_marginTop="15dp"/>
 
             <TextView
                 android:id="@+id/rc_override_warning"
@@ -497,7 +507,7 @@
                 android:layout_height="wrap_content"
                 android:text=""
                 android:layout_alignTop="@id/mapview"
-                android:layout_toRightOf="@id/centermap"
+                android:layout_toRightOf="@id/center_on_boat_button"
                 android:layout_marginLeft="15dp"/>
 
             <Button
