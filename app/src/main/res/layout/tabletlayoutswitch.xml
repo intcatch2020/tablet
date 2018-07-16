@@ -479,7 +479,8 @@
                 android:layout_height="match_parent"
                 android:layout_alignParentStart="true"
                 android:layout_alignParentTop="true"
-                mapbox:mapbox_styleUrl="@string/mapbox_style_mapbox_streets"/>
+                mapbox:mapbox_styleUrl="@string/mapbox_style_mapbox_streets">
+            </com.mapbox.mapboxsdk.maps.MapView>
 
             <Button
                 style="?android:attr/buttonStyleSmall"
@@ -489,6 +490,15 @@
                 android:text="Center"
                 android:layout_alignTop="@id/mapview"
                 android:layout_alignLeft="@id/mapview"/>
+
+            <TextView
+                android:id="@+id/rc_override_warning"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:layout_alignTop="@id/mapview"
+                android:layout_toRightOf="@id/centermap"
+                android:layout_marginLeft="15dp"/>
 
             <Button
                 android:id="@+id/advopt"
