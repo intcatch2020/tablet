@@ -2,12 +2,16 @@ package com.platypus.android.tablet;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.net.URL;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -200,10 +204,11 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 
 		MapView mv;
 		MapboxMap mMapboxMap;
-
-		//LatLng home_location = null;
-		// Marker home_marker;
 		IconFactory mIconFactory;
+
+		private File mLogFile;
+		private PrintWriter mLogWriter;
+		private long mLogStartTime;
 
 		int current_wp_list_selected = -1; // which element selected
 		LatLng pHollowStartingPoint = new LatLng((float) 40.436871, (float) -79.948825);
@@ -632,6 +637,19 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 				sensor_stuff = new SensorStuff(this);
 				saved_waypoint_stuff = new SavedWaypointsStuff(context);
 
+				SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US);
+				File logDirectory = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), "platypus");
+				mLogFile = new File(logDirectory,"platypus_" + sdf.format(new Date()) + ".txt");
+				try {
+						logDirectory.mkdirs();
+						mLogFile.createNewFile();
+						mLogWriter = new PrintWriter(mLogFile);
+						mLogStartTime = System.currentTimeMillis();
+				} catch (IOException e) {
+						Log.e(logTag, "Failed to create log file: " + mLogFile, e);
+						return;
+				}
+
 				// establish color_map
 				color_map.put(0, new HashMap<String, Integer>());
 				color_map.put(1, new HashMap<String, Integer>());
@@ -852,7 +870,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 						@Override
 						public void run()
 						{
-								Boat boat = currentBoat();
+								final Boat boat = currentBoat();
 								if (boat != null)
 								{
 										boolean isConnected = boat.isConnected();
@@ -870,6 +888,30 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 														status = "disconnected";
 												}
 												Log.w(logTag, String.format("Connection to \"%s\" changed, now %s", boat.getName(), status));
+
+												// TODO: log may use the old position of the boat on a re-connection if the poseListener hasn't received a new pose
+												// TODO: how can we ensure that the updated position is used?
+												// TODO: we could delay the log statement by a little bit
+												final String log_string = System.currentTimeMillis()-mLogStartTime + "\t" + boat.getName() + " " + status;
+												uiHandler.postDelayed(new Runnable()
+												{
+														@Override
+														public void run()
+														{
+																String log_string_copy = log_string;
+																if (tablet_gps_fix)
+																{
+																		LatLng operator_location;
+																		synchronized (tablet_location_lock)
+																		{
+																				operator_location = new LatLng(tablet_latlng[0], tablet_latlng[1]);
+																		}
+																		double distance_to_boat = boat.distanceFromOperator(operator_location);
+																		log_string_copy += "\t" + String.format(Locale.US, "distance = %.1f", distance_to_boat);
+																}
+																mLogWriter.println(log_string_copy);
+														}
+												}, 1000);
 										}
 										current_boat_is_connected.set(isConnected);
 
@@ -947,7 +989,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 				{
 						@Override
 						public void onClick(View v)
-						{
+						{									
 								PopupMenu popup = new PopupMenu(TeleOpPanel.this, advanced_options_button);
 								popup.getMenuInflater().inflate(R.menu.dropdownmenu, popup.getMenu());
 								popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener()
@@ -1649,6 +1691,11 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 				LocationManager gps;
 				gps = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 				gps.removeUpdates(location_listener);
+
+				if (mLogWriter != null) {
+						mLogWriter.close();
+						mLogWriter = null;
+				}
 		}
 
 		@Override

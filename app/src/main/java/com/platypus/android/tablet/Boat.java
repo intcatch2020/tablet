@@ -171,6 +171,14 @@ public abstract class Boat
 				}
 		}
 
+		double distanceFromOperator(LatLng operator_location)
+		{
+				synchronized (location_lock)
+				{
+						return operator_location.distanceTo(currentLocation);
+				}
+		}
+
 		int getWaypointsIndex()
 		{
 				return current_waypoint_index.get();
