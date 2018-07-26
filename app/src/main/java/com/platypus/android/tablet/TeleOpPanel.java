@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.measure.unit.NonSI;
 
@@ -42,6 +43,10 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
+import android.location.Criteria;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.media.Ringtone;
 import android.media.RingtoneManager;
 import android.net.ConnectivityManager;
@@ -63,7 +68,6 @@ import com.platypus.android.tablet.Path.AreaType;
 import com.platypus.android.tablet.Path.Path;
 import com.platypus.android.tablet.Path.Region;
 import com.platypus.crw.CrwNetworkUtils;
-import com.platypus.crw.RCOverrideListener;
 import com.platypus.crw.VehicleServer;
 import com.platypus.crw.data.SensorData;
 
@@ -150,7 +154,8 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 		RadioButton sim_boat_button = null;
 		boolean use_real_boat = true;
 		Button advanced_options_button = null;
-		Button center_view_button = null;
+		Button center_on_boat_button = null;
+		Button center_on_operator_button = null;
 		Button start_wp_button = null;
 		Button pause_wp_button = null;
 		boolean paused = false;
@@ -241,6 +246,14 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 		final Object _batteryVoltageLock = new Object();
 		Ringtone alarm_ringtone;
 		Uri alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
+
+		LocationListener location_listener;
+		final Object tablet_location_lock = new Object();
+		Double[] tablet_latlng = new Double[] {0.0, 0.0};
+		boolean tablet_gps_fix = false;
+		MarkerViewOptions tablet_location_markerviewoptions = null;
+		double distance_to_current_boat;
+		AtomicBoolean current_boat_is_connected = new AtomicBoolean(false);
 
 		int boat_color_count = 0;
 		Map<Integer, Map<String, Integer>> color_map = new HashMap<>();
@@ -522,6 +535,29 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 				}
 		}
 
+		class TabletLocationMarkerRunnable implements Runnable
+		{
+				@Override
+				public void run()
+				{
+						double lat;
+						double lon;
+						synchronized (tablet_location_lock)
+						{
+								lat = tablet_latlng[0];
+								lon = tablet_latlng[1];
+						}
+
+						if (mMapboxMap == null) return;
+
+						MarkerView marker_view = tablet_location_markerviewoptions.getMarker();
+						if (marker_view == null) return;
+						Log.d(logTag, "Updating operator marker location");
+						marker_view.setPosition(new LatLng(lat, lon));
+						marker_view.setVisible(true);
+				}
+		}
+
 		class LoadedWaypointsRunnable implements Runnable
 		{
 				// Custom runnable that owns a list of waypoints, used for loading waypoints from a file
@@ -629,7 +665,8 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 				path_length_value = (TextView) this.findViewById(R.id.path_length_value);
 
 				advanced_options_button = (Button) this.findViewById(R.id.advopt);
-				center_view_button = (Button) this.findViewById(R.id.centermap);
+				center_on_boat_button = (Button) this.findViewById(R.id.center_on_boat_button);
+				center_on_operator_button = (Button) this.findViewById(R.id.center_on_operator_button);
 				undo_last_wp_button = (Button) this.findViewById(R.id.undo_last_wp_button);
 				remove_all_wp_button = (Button) this.findViewById(R.id.remove_all_wp_button);
 				drop_wp_button = (Button) this.findViewById(R.id.drop_wp_button);
@@ -690,6 +727,8 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 										sensor_stuff.newSensorSet(); // clear the sensor text data
 										waypointInfo.setText("");
 										battery_value.setText("");
+
+										current_boat_is_connected.set(boat.isConnected());
 								}
 						}
 
@@ -817,6 +856,23 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 								if (boat != null)
 								{
 										boolean isConnected = boat.isConnected();
+
+										if (isConnected != current_boat_is_connected.get())
+										{
+												// TODO: status has changed, log event
+												String status;
+												if (isConnected)
+												{
+														status = "connected";
+												}
+												else
+												{
+														status = "disconnected";
+												}
+												Log.w(logTag, String.format("Connection to \"%s\" changed, now %s", boat.getName(), status));
+										}
+										current_boat_is_connected.set(isConnected);
+
 										if (isConnected)
 										{
 												ipAddressBox.setBackgroundColor(Color.GREEN);
@@ -830,11 +886,11 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 								{
 										ipAddressBox.setBackgroundColor(Color.RED);
 								}
-								uiHandler.postDelayed(this, 1000);
+								uiHandler.postDelayed(this, 500);
 						}
 				});
 
-				center_view_button.setOnClickListener(new OnClickListener()
+				center_on_boat_button.setOnClickListener(new OnClickListener()
 				{
 						@Override
 						public void onClick(View view)
@@ -857,6 +913,32 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 										return;
 								}
 								mMapboxMap.moveCamera(CameraUpdateFactory.newCameraPosition(new CameraPosition.Builder().target(location).zoom(16).build()));
+						}
+				});
+
+				center_on_operator_button.setOnClickListener(new OnClickListener()
+				{
+						@Override
+						public void onClick(View v)
+						{
+								if (mMapboxMap == null)
+								{
+										Toast.makeText(getApplicationContext(), "Please wait for the map to load", Toast.LENGTH_LONG).show();
+										return;
+								}
+								if (!tablet_gps_fix)
+								{
+										Toast.makeText(getApplicationContext(), "Tablet does not have GPS fix", Toast.LENGTH_SHORT).show();
+										return;
+								}
+								double lat, lon;
+								synchronized (tablet_location_lock)
+								{
+										lat = tablet_latlng[0];
+										lon = tablet_latlng[1];
+								}
+								LatLng oploc = new LatLng(lat, lon);
+								mMapboxMap.moveCamera(CameraUpdateFactory.newCameraPosition(new CameraPosition.Builder().target(oploc).zoom(16).build()));
 						}
 				});
 
@@ -1463,6 +1545,55 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 								return false;
 						}
 				});
+
+				location_listener = new LocationListener()
+				{
+						@Override
+						public void onLocationChanged(Location location)
+						{
+								// Convert from lat/long to UTM coordinates
+								double lat = location.getLatitude();
+								double lon = location.getLongitude();
+								synchronized (tablet_location_lock)
+								{
+										tablet_latlng[0] = lat;
+										tablet_latlng[1] = lon;
+								}
+								Log.d(logTag, String.format("tablet latlng = %f, %f", lat, lon));
+
+								if (!tablet_gps_fix)
+								{
+										Log.i(logTag, "Creating tablet location marker");
+										tablet_location_markerviewoptions = new MarkerViewOptions()
+														.position(new LatLng(lat, lon))
+														.title("operator")
+														.icon(mIconFactory.fromResource(R.drawable.userloc))
+														.rotation(0)
+														.anchor(0.5f, 0.5f)
+														.flat(true);
+										mMapboxMap.addMarker(tablet_location_markerviewoptions);
+								}
+								tablet_gps_fix = true;
+
+								uiHandler.post(new TabletLocationMarkerRunnable());
+						}
+
+						@Override
+						public void onStatusChanged(String provider, int status, Bundle extras)  { }
+
+						@Override
+						public void onProviderEnabled(String provider) { }
+
+						@Override
+						public void onProviderDisabled(String provider) { }
+				};
+
+				LocationManager gps = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+				Criteria c = new Criteria();
+				c.setAccuracy(Criteria.ACCURACY_FINE);
+				c.setPowerRequirement(Criteria.NO_REQUIREMENT);
+				String provider = gps.getBestProvider(c, false);
+				gps.requestLocationUpdates(provider, 500, 0, location_listener);
 		}
 
 		@Override
@@ -1513,6 +1644,11 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 				}
 				editor.apply();
 				editor.commit();
+
+				// Disconnect from GPS updates
+				LocationManager gps;
+				gps = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+				gps.removeUpdates(location_listener);
 		}
 
 		@Override
