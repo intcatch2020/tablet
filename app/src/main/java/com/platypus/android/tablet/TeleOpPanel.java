@@ -731,6 +731,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 						@Override
 						public void onItemSelected(AdapterView<?> parent, View view, int position, long id)
 						{
+								mLogWriter.println(System.currentTimeMillis() - mLogStartTime + "\t" + "available_boats_spinner");
 								Toast.makeText(getApplicationContext(),
 												String.format(
 																"Controlling: %s",
@@ -818,6 +819,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 																@Override
 																public void onClick(View v)
 																{
+																		mLogWriter.println(System.currentTimeMillis() - mLogStartTime + "\t" + "button" + "\t" + "waypoint_move");
 																		// next map click sets the marker's location and resets the map click listener to null
 																		mMapboxMap.setOnMapClickListener(new MapboxMap.OnMapClickListener()
 																		{
@@ -857,6 +859,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 										@Override
 										public void onMapLongClick(LatLng point)
 										{
+												mLogWriter.println(System.currentTimeMillis() - mLogStartTime + "\t" + "added_new_waypoint");
 												addSingleWaypointMarker(point);
 										}
 								});
@@ -937,6 +940,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 						@Override
 						public void onClick(View view)
 						{
+								mLogWriter.println(System.currentTimeMillis() - mLogStartTime + "\t" + "button" + "\t" + "center_on_boat");
 								if (mMapboxMap == null)
 								{
 										Toast.makeText(getApplicationContext(), "Please wait for the map to load", Toast.LENGTH_LONG).show();
@@ -963,6 +967,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 						@Override
 						public void onClick(View v)
 						{
+								mLogWriter.println(System.currentTimeMillis() - mLogStartTime + "\t" + "button" + "\t" + "center_on_operator");
 								if (mMapboxMap == null)
 								{
 										Toast.makeText(getApplicationContext(), "Please wait for the map to load", Toast.LENGTH_LONG).show();
@@ -989,7 +994,10 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 				{
 						@Override
 						public void onClick(View v)
-						{									
+						{
+
+								mLogWriter.println(System.currentTimeMillis() - mLogStartTime + "\t" + "button" + "\t" + "advanced_options");
+
 								PopupMenu popup = new PopupMenu(TeleOpPanel.this, advanced_options_button);
 								popup.getMenuInflater().inflate(R.menu.dropdownmenu, popup.getMenu());
 								popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener()
@@ -1001,26 +1009,31 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 														case "Satellite Map":
 														{
 																if (mMapboxMap != null) mMapboxMap.setStyle(Style.SATELLITE);
+																mLogWriter.println(System.currentTimeMillis() - mLogStartTime + "\t" + "button" + "\t" + "satellite_map");
 																break;
 														}
 														case "Vector Map":
 														{
 																if (mMapboxMap != null) mMapboxMap.setStyle(Style.MAPBOX_STREETS);
+																mLogWriter.println(System.currentTimeMillis() - mLogStartTime + "\t" + "button" + "\t" + "vector_map");
 																break;
 														}
 														case "Set Home":
 														{
 																setHome();
+																mLogWriter.println(System.currentTimeMillis() - mLogStartTime + "\t" + "button" + "\t" + "set_home");
 																break;
 														}
 														case "Go Home":
 														{
 																goHome();
+																mLogWriter.println(System.currentTimeMillis() - mLogStartTime + "\t" + "button" + "\t" + "go_home");
 																break;
 														}
 														case "Send PIDs":
 														{
 																sendPID();
+																mLogWriter.println(System.currentTimeMillis() - mLogStartTime + "\t" + "button" + "\t" + "send_PIDs");
 																break;
 														}
 														case "Save Waypoints":
@@ -1031,11 +1044,13 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 																		break;
 																}
 																saved_waypoint_stuff.saveWaypointsToFile(waypoint_list);
+																mLogWriter.println(System.currentTimeMillis() - mLogStartTime + "\t" + "button" + "\t" + "save_waypoints");
 																break;
 														}
 														case "Load Waypoints":
 														{
 																saved_waypoint_stuff.loadWaypointsFromFile(new LoadedWaypointsRunnable(new ArrayList<LatLng>()));
+																mLogWriter.println(System.currentTimeMillis() - mLogStartTime + "\t" + "button" + "\t" + "load_waypoints");
 																break;
 														}
 														case "Snooze Alarms":
@@ -1046,18 +1061,21 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 																		alarm_on = false;
 																		alarm_ringtone.stop();
 																}
+																mLogWriter.println(System.currentTimeMillis() - mLogStartTime + "\t" + "button" + "\t" + "snooze_alarms");
 																break;
 														}
 														case "Preferences":
 														{
 																Intent intent = new Intent(context, SettingsActivity.class);
 																context.startActivity(intent);
+																mLogWriter.println(System.currentTimeMillis() - mLogStartTime + "\t" + "button" + "\t" + "preferences");
 																break;
 														}
 														case "Autonomy":
 														{
 																Intent intent = new Intent(context, AutonomyActivity.class);
 																context.startActivity(intent);
+																mLogWriter.println(System.currentTimeMillis() - mLogStartTime + "\t" + "button" + "\t" + "autonomy");
 																break;
 														}
 												}
@@ -1105,6 +1123,8 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 
 								Toast.makeText(getApplicationContext(), String.valueOf(speed_spinner.getSelectedItem()), Toast.LENGTH_SHORT).show();
 								sendPID();
+
+								mLogWriter.println(System.currentTimeMillis() - mLogStartTime + "\t" + "speed_spinner" + "\t" + item);
 						}
 
 						@Override
@@ -1130,6 +1150,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 						@Override
 						public void onClick(View v)
 						{
+								mLogWriter.println(System.currentTimeMillis() - mLogStartTime + "\t" + "button" + "\t" + "connect_to_boat");
 								connectBox();
 						}
 				});
@@ -1140,6 +1161,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 						@Override
 						public void onClick(View v)
 						{
+								mLogWriter.println(System.currentTimeMillis() - mLogStartTime + "\t" + "button" + "\t" + "start_waypoints");
 								Log.i(logTag, "startWaypoints() called...");
 								paused = false;
 								pause_wp_button.setBackground(getDrawable(R.drawable.pause_button));
@@ -1195,6 +1217,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 						@Override
 						public void onClick(View v)
 						{
+								mLogWriter.println(System.currentTimeMillis() - mLogStartTime + "\t" + "button" + "\t" + "pause_waypoints");
 								Boat boat = currentBoat();
 								if (boat != null)
 								{
@@ -1220,6 +1243,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 						@Override
 						public void onClick(View v)
 						{
+								mLogWriter.println(System.currentTimeMillis() - mLogStartTime + "\t" + "button" + "\t" + "stop_waypoints");
 								paused = false;
 								pause_wp_button.setBackground(getDrawable(R.drawable.pause_button));
 								Boat boat = currentBoat();
@@ -1231,7 +1255,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 										path_map.get(boat_name).clearPoints();
 										waypath_outline_map.get(boat_name).clear();
 										waypath_top_map.get(boat_name).clear();
-										clearWaypointMarkers();
+										//clearWaypointMarkers();
 								}
 						}
 				});
@@ -1241,6 +1265,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 						@Override
 						public void onClick(View v)
 						{
+								mLogWriter.println(System.currentTimeMillis() - mLogStartTime + "\t" + "button" + "\t" + "undo_last_waypoint");
 								Log.i(logTag, String.format("waypoint_list.size() = %d,   marker_list.size() = %d", waypoint_list.size(), marker_list.size()));
 								if (marker_list.size() > 0)
 								{
@@ -1262,6 +1287,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 						@Override
 						public void onClick(View v)
 						{
+								mLogWriter.println(System.currentTimeMillis() - mLogStartTime + "\t" + "button" + "\t" + "remove_all_waypoints");
 								Log.i(logTag, String.format("waypoint_list.size() = %d,   marker_list.size() = %d", waypoint_list.size(), marker_list.size()));
 								if (marker_list.size() > 0)
 								{
@@ -1275,6 +1301,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 						@Override
 						public void onClick(View v)
 						{
+								mLogWriter.println(System.currentTimeMillis() - mLogStartTime + "\t" + "button" + "\t" + "drop_waypoint_on_boat");
 								final Boat boat = currentBoat();
 								if (boat == null)
 								{
@@ -1301,6 +1328,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 						@Override
 						public void onClick(View v)
 						{
+								mLogWriter.println(System.currentTimeMillis() - mLogStartTime + "\t" + "button" + "\t" + "normal_path");
 								// create a Path object from the current waypoints
 								// draw the lines between the current waypoints to show the path
 								// calculate the path length and show it in the text
@@ -1325,6 +1353,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 						@Override
 						public void onClick(View v)
 						{
+								mLogWriter.println(System.currentTimeMillis() - mLogStartTime + "\t" + "button" + "\t" + "spiral_path");
 								try
 								{
 										currentTransectDist = Double.valueOf(transect_distance_input.getText().toString());
@@ -1365,6 +1394,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 						@Override
 						public void onClick(View v)
 						{
+								mLogWriter.println(System.currentTimeMillis() - mLogStartTime + "\t" + "button" + "\t" + "lawnmower_path");
 								try
 								{
 										currentTransectDist = Double.valueOf(transect_distance_input.getText().toString());
@@ -1405,6 +1435,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 						@Override
 						public void onClick(View v)
 						{
+								mLogWriter.println(System.currentTimeMillis() - mLogStartTime + "\t" + "button" + "\t" + "reverse_waypoints_order");
 								if (waypoint_list.size() > 1)
 								{
 										unowned_path.clearPoints();
@@ -1421,6 +1452,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 						@Override
 						public void onClick(View v)
 						{
+								mLogWriter.println(System.currentTimeMillis() - mLogStartTime + "\t" + "button" + "\t" + "convert_to_normal_path");
 								if (unowned_path.getPoints().size() > 2)
 								{
 										replaceWaypointMarkers(unowned_path.getPoints());
@@ -1502,6 +1534,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 						@Override
 						public void onClick(View v)
 						{
+								mLogWriter.println(System.currentTimeMillis() - mLogStartTime + "\t" + "button" + "\t" + "sampler_start_jar_" + Integer.toString(number));
 								if (button.isClickable())
 								{
 										Boat boat = currentBoat();
@@ -1562,6 +1595,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 						@Override
 						public boolean onLongClick(View v)
 						{
+								mLogWriter.println(System.currentTimeMillis() - mLogStartTime + "\t" + "button" + "\t" + "sampler_reset");
 								Boat boat = currentBoat();
 								if (boat == null)
 								{
@@ -1577,6 +1611,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 						@Override
 						public boolean onLongClick(View v)
 						{
+								mLogWriter.println(System.currentTimeMillis() - mLogStartTime + "\t" + "button" + "\t" + "sampler_stop");
 								Boat boat = currentBoat();
 								if (boat == null)
 								{
@@ -1635,7 +1670,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 				c.setAccuracy(Criteria.ACCURACY_FINE);
 				c.setPowerRequirement(Criteria.NO_REQUIREMENT);
 				String provider = gps.getBestProvider(c, false);
-				gps.requestLocationUpdates(provider, 500, 0, location_listener);
+				gps.requestLocationUpdates(provider, 1000, 0, location_listener);
 		}
 
 		@Override
@@ -1780,6 +1815,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 				@Override
 				public void OnReturnedToCenter()
 				{
+						mLogWriter.println(System.currentTimeMillis() - mLogStartTime + "\t" + "joystick");
 						boat = currentBoat();
 						if (boat != null)
 						{
