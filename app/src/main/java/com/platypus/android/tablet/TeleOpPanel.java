@@ -1600,6 +1600,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 								if (boat == null)
 								{
 										Toast.makeText(context, "Connect to a boat first", Toast.LENGTH_SHORT).show();
+										return false;
 								}
 								boat.resetSampler(new ResetSamplerSuccessRunnable(),
 												new ToastFailureCallback("Sampler Reset Msg timed out"));
@@ -1616,6 +1617,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 								if (boat == null)
 								{
 										Toast.makeText(context, "Connect to a boat first", Toast.LENGTH_SHORT).show();
+										return false;
 								}
 								boat.stopSampleAll(new ResetSamplerSuccessRunnable(),
 												new ToastFailureCallback("Sampler Stop All Msg timed out"));
