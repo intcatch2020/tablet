@@ -25,14 +25,16 @@
         android:id="@+id/loadwpbutton"
         android:title="Load Waypoints" />
     <item
-        android:id="@+id/loadWaypointFileButton"
-        android:title="Load Waypoint File" />
-    <item
         android:id="@+id/snooze_alarms_button"
         android:title="Snooze Alarms" />
     <item
         android:id="@+id/preferences"
         android:title="Preferences" />
+
+    <item
+        android:id="@+id/auto_pred_button"
+        android:title="Autonomy"
+        />
 
 
 

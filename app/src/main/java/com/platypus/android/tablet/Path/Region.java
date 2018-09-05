@@ -1,680 +1,843 @@
 package com.platypus.android.tablet.Path;
 
-import java.util.ArrayList;
+import android.util.Log;
+import android.util.Pair;
 
 import com.mapbox.mapboxsdk.geometry.LatLng;
 
+import org.jscience.geography.coordinates.LatLong;
+import org.jscience.geography.coordinates.UTM;
+import org.jscience.geography.coordinates.crs.ReferenceEllipsoid;
 
-//TODO what is causing the random lines across the polygon that occur in spiral mode?
-//TODO ok caused by the previous polygon has points that get added for some reason
-//TODO fix the random lines
-public class Region extends Path
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+
+import javax.measure.unit.NonSI;
+import javax.measure.unit.SI;
+
+/**
+ * Created by jason on 11/20/17.
+ */
+
+public class Region
 {
-		//  private double transectDistance = .1; //testing
-		private final double ONEMETER = transectDistance / 10;
-		AreaType regionType;// = AreaType.SPIRAL;
-		private static final double LON_D_PER_M = 1.0 / 90000.0;
-		private static final double LAT_D_PER_M = 1.0 / 110000.0;
 
-		//Dont quickhull points, keep them original
-		private ArrayList<LatLng> originalPoints = new ArrayList<LatLng>();
-		//Points will be the original points
-		private ArrayList<LatLng> regionPoints = new ArrayList<LatLng>();
-
-		public Region(ArrayList<LatLng> list, AreaType type)
+		class Intersection
 		{
-				setPoints(list);
-				originalPoints = points;
-				regionType = type;
-				updateRegionPoints();
-		}
-
-		public Region(ArrayList<LatLng> list, AreaType type, Double transect)
-		{
-				setPoints(list);
-				originalPoints = points;
-				regionType = type;
-				transectDistance = transect * ONE_METER;
-				updateRegionPoints();
-		}
-
-		public AreaType getAreaType()
-		{
-				return regionType;
-		}
-
-		/*
-			Any time you call setPoints or add/removePoint/clear the new
-			regionPoints is generated.
-		*/
-		public void updateTransect(double submeters)
-		{
-				transectDistance = submeters * ONEMETER;
-				updateRegionPoints();
-		}
-
-		public ArrayList<LatLng> getPoints()
-		{
-				return regionPoints;
-		}
-
-		public ArrayList<ArrayList<LatLng>> getPointPairs()
-		{
-				ArrayList<ArrayList<LatLng>> point_pairs = new ArrayList<>();
-				for (int i = 0; i < regionPoints.size() - 1; i++)
+				int first;
+				int second;
+				Double[] p;
+				boolean usable;
+				double distance_to_center;
+				Intersection(int first_, int second_, Double[] p_)
 				{
-						ArrayList<LatLng> pair = new ArrayList<>();
-						pair.add(regionPoints.get(i));
-						pair.add(regionPoints.get(i + 1));
-						point_pairs.add(pair);
+						first = first_;
+						second = second_;
+						p = p_.clone();
+						usable = true;
+						distance_to_center = distanceToCentroid(p);
 				}
-				return point_pairs;
 		}
 
-		public ArrayList<LatLng> getOriginalPoints()
+		class Line
 		{
-				return originalPoints;
-		}
-
-		public void updateRegionPoints()
-		{
-				regionPoints.clear();
-				if (points.size() == 0)
+				int index;
+				Double[] p1;
+				Double[] p2;
+				Line(int index_, Double[] p1_, Double[] p2_)
 				{
-						return;
+						index = index_;
+						p1 = p1_.clone();
+						p2 = p2_.clone();
 				}
-				if (regionType == AreaType.SPIRAL)
+
+				Intersection findIntersection(Line j)
 				{
-						quickHull();
-						ArrayList<ArrayList<LatLng>> spiralPath = computeSpiralsPolygonOffset();
-						for (ArrayList<LatLng> a : spiralPath)
+						Double[] d1 = difference(p1, p2);
+						Double[] d2 = difference(j.p1, j.p2);
+						Double[] dp = difference(j.p1, p1);
+						Double[] d1p = new Double[]{-d1[1], d1[0]};
+						double denominator = dot(d1p, d2);
+						double numerator = dot(d1p, dp);
+						double c = numerator/denominator;
+						return new Intersection(index, j.index, new Double[] {c*d2[0] + j.p1[0], c*d2[1] + j.p1[1]});
+				}
+
+				Intersection findIntersectionSegments(Line j)
+				{
+						// treat both lines as segments - only return an intersection if both segments actually contain the point
+						Intersection intersection = findIntersection(j);
+
+						// the sign of dot products will tell you if a point is on a line segment
+						// vector from intersection to line segment end points
+						// if the point is on the segment, the vectors will point in opposite directions (negative dot)
+						// if the point is not on the segment, the vectors will point in the same direction (positive dot)
+
+						// this line
+						if (Math.signum(dot(difference(intersection.p, p1), difference(intersection.p, p2))) > 0) return null;
+
+						// line j
+						if (Math.signum(dot(difference(intersection.p, j.p1), difference(intersection.p, j.p2))) > 0) return null;
+
+						return intersection;
+				}
+
+				double cross(Line j)
+				{
+						Double[] d1 = difference(p1, p2);
+						Double[] d2 = difference(j.p1, j.p2);
+						return d1[0]*d2[1] - d2[0]*d1[1];
+				}
+
+				double angle()
+				{
+						Double[] diff = difference(p1, p2);
+						return Math.atan2(diff[1], diff[0]);
+				}
+
+				double length()
+				{
+						return distance(p1, p2);
+				}
+
+				double incidentAngle(Line j)
+				{
+						return wrapToPi(angle()-j.angle());
+				}
+		}
+
+		class IntersectionMap extends HashMap<Pair<Integer, Integer>, Intersection>
+		{
+				// Override get and containsKey so that the integers can be in reverse order
+				@Override
+				public Intersection get(Object key_)
+				{
+						Pair<Integer, Integer> key = (Pair<Integer, Integer>) key_;
+						Pair<Integer, Integer> reverseKey = new Pair<>(key.second, key.first);
+						if (super.containsKey(key))
 						{
-								for (LatLng p : a)
-								{
-										regionPoints.add(p);
-								}
+								return super.get(key);
 						}
-						regionPoints.remove(regionPoints.size() - 1);
-				}
-				if (regionType == AreaType.LAWNMOWER)
-				{
-						quickHull();
-						getLawnmowerPath(transectDistance / 2);
-				}
-		}
-
-		public void quickHull()
-		{
-				regionPoints = new ArrayList<LatLng>(points);
-				ArrayList<LatLng> convexHull = new ArrayList<LatLng>();
-				if (points.size() < 3)
-				{
-						return;
-				}
-
-				int minLatLng = -1, maxLatLng = -1;
-				double minX = Double.MAX_VALUE;
-				double maxX = Double.MIN_VALUE;
-				for (int i = 0; i < points.size(); i++)
-				{
-						if (points.get(i).getLatitude() < minX)
+						else if (super.containsKey(reverseKey))
 						{
-								minX = points.get(i).getLatitude();
-								minLatLng = i;
+								return super.get(reverseKey);
 						}
-
-						if (points.get(i).getLatitude() > maxX) //is this right?
-						{
-								maxX = points.get(i).getLatitude();
-								maxLatLng = i;
-						}
+						return null;
 				}
 
-				LatLng A = points.get(minLatLng);
-				LatLng B = points.get(maxLatLng);
-				convexHull.add(A);
-				convexHull.add(B);
-				points.remove(A);
-				points.remove(B);
-				regionPoints.remove(A);
-				regionPoints.remove(B);
-
-				ArrayList<LatLng> leftSet = new ArrayList<LatLng>();
-				ArrayList<LatLng> rightSet = new ArrayList<LatLng>();
-
-				for (int i = 0; i < points.size(); i++)
+				@Override
+				public boolean containsKey(Object key_)
 				{
-						LatLng p = points.get(i);
-						if (pointLocation(A, B, p) == -1)
-								leftSet.add(p);
-						else if (pointLocation(A, B, p) == 1)
-								rightSet.add(p);
-				}
-				hullSet(A, B, rightSet, convexHull);
-				hullSet(B, A, leftSet, convexHull);
-				points = new ArrayList<LatLng>(convexHull);
-				quickHulledPoints = new ArrayList<LatLng>(points); //im such a bad programmer :(
-		}
-
-		public void hullSet(LatLng A, LatLng B, ArrayList<LatLng> set, ArrayList<LatLng> hull)
-		{
-				int insertPosition = hull.indexOf(B);
-				if (set.size() == 0)
-						return;
-				if (set.size() == 1)
-				{
-						LatLng p = set.get(0);
-						set.remove(p);
-						hull.add(insertPosition, p);
-						return;
-				}
-				double dist = Double.MIN_VALUE;
-				int furthestLatLng = -1;
-				for (int i = 0; i < set.size(); i++)
-				{
-						LatLng p = set.get(i);
-						double distance = distance(A, B, p);
-						if (distance > dist)
-						{
-								dist = distance;
-								furthestLatLng = i;
-						}
-				}
-				LatLng P = set.get(furthestLatLng);
-				set.remove(furthestLatLng);
-				hull.add(insertPosition, P);
-				// Determine who's to the left of AP
-
-				ArrayList<LatLng> leftSetAP = new ArrayList<LatLng>();
-				for (int i = 0; i < set.size(); i++)
-				{
-						LatLng M = set.get(i);
-						if (pointLocation(A, P, M) == 1)
-						{
-								leftSetAP.add(M);
-						}
-				}
-
-				// Determine who's to the left of PB
-
-				ArrayList<LatLng> leftSetPB = new ArrayList<LatLng>();
-				for (int i = 0; i < set.size(); i++)
-				{
-						LatLng M = set.get(i);
-						if (pointLocation(P, B, M) == 1)
-						{
-								leftSetPB.add(M);
-						}
-				}
-				hullSet(A, P, leftSetAP, hull);
-				hullSet(P, B, leftSetPB, hull);
-		}
-
-		public double distance(LatLng A, LatLng B, LatLng C)
-		{
-				double ABx = B.getLongitude() - A.getLongitude();
-				double ABy = B.getLatitude() - A.getLatitude();
-				double num = ABx * (A.getLatitude() - C.getLatitude()) - ABy * (A.getLongitude() - C.getLongitude());
-				if (num < 0)
-						num = -num;
-				return num;
-		}
-
-		public double pointLocation(LatLng A, LatLng B, LatLng P)
-		{
-				double cp1 = (B.getLongitude() - A.getLongitude()) * (P.getLatitude() - A.getLatitude()) - (B.getLatitude() - A.getLatitude()) * (P.getLongitude() - A.getLongitude());
-				if (cp1 > 0)
-						return 1;
-				else if (cp1 == 0)
-						return 0;
-				else
-						return -1;
-		}
-
-		public LatLng computeCentroid(ArrayList<LatLng> vertices)
-		{
-				double tempLat = 0;
-				double tempLon = 0;
-
-				for (LatLng i : vertices)
-				{
-						tempLat += i.getLatitude();
-						tempLon += i.getLongitude();
-				}
-				return new LatLng(tempLat / vertices.size(), tempLon / vertices.size());
-		}
-
-		public double computeDistance(LatLng firstPoint, LatLng secondPoint)
-		{
-				double x = Math.pow((secondPoint.getLatitude() - firstPoint.getLatitude()), 2);
-				double y = Math.pow((secondPoint.getLongitude() - firstPoint.getLongitude()), 2);
-				return Math.sqrt(x + y);
-		}
-
-		public double calculateLength(LatLng vector)
-		{
-				return Math.sqrt(Math.pow(vector.getLatitude(), 2) + Math.pow(vector.getLongitude(), 2));
-		}
-
-		public LatLng normalizeVector(LatLng vector)
-		{
-				double distance = calculateLength(vector);
-				return new LatLng(vector.getLatitude() / distance, vector.getLongitude() / distance);
-		}
-
-		public boolean isNonAdjacentLessThan10Meters(ArrayList<LatLng> verts)
-		{
-				//since all points in triangle are adjacent
-				if (verts.size() == 3)
-				{
-						if (computeDistance(verts.get(0), verts.get(1)) < transectDistance)
+						Pair<Integer, Integer> key = (Pair<Integer, Integer>) key_;
+						Pair<Integer, Integer> reverseKey = new Pair<>(key.second, key.first);
+						if (super.containsKey(key))
 						{
 								return true;
 						}
-						else if (computeDistance(verts.get(0), verts.get(2)) < transectDistance)
-						{
-								return true;
-						}
-						else if (computeDistance(verts.get(1), verts.get(2)) < transectDistance)
+						else if (super.containsKey(reverseKey))
 						{
 								return true;
 						}
 						return false;
 				}
 
-				for (int i = 0; i < verts.size(); i++)
+				private IntersectionMap sliceBySharedKey(int i, int j)
 				{
-						for (int p = i + 2; p < verts.size(); p++)
+						// provide a list of all intersections that share only 1 of i or j, but not both!
+						IntersectionMap result = new IntersectionMap();
+						for (Entry<Pair<Integer, Integer>, Intersection> entry : this.entrySet())
 						{
-								if (i == 0 && p == verts.size() - 1)
+								Pair<Integer, Integer> key = entry.getKey();
+								if ((key.first == i ^ key.second == j) || (key.second == i ^ key.first == j))
 								{
-										continue;
-								}
-								if (computeDistance(verts.get(i), verts.get(p)) < 2 * transectDistance)
-								{
-										return true;
-								}
-						}
-				}
-
-				return false;
-		}
-
-		public LatLng findBisectNormal(LatLng a, LatLng b)
-		{
-				a = normalizeVector(a);
-				b = normalizeVector(b);
-				LatLng added = add(a, b);
-				return normalizeVector(added);
-		}
-
-		public double dot(LatLng a, LatLng b)
-		{
-				return a.getLatitude() * b.getLatitude() + a.getLongitude() * b.getLongitude();
-		}
-
-		public LatLng add(LatLng a, LatLng b)
-		{
-				return new LatLng(a.getLatitude() + b.getLatitude(), a.getLongitude() + b.getLongitude());
-		}
-
-		public LatLng subtract(LatLng a, LatLng b)
-		{
-				return new LatLng(a.getLatitude() - b.getLatitude(), a.getLongitude() - b.getLongitude());
-				//return new LatLng(b.getLatitude() - a.getLatitude(),b.getLongitude() - a.getLongitude());
-		}
-
-		public LatLng findVector(LatLng a, LatLng b)
-		{
-				return subtract(a, b);
-		}
-
-		public LatLng multiply(LatLng a, double amount)
-		{
-				return new LatLng(a.getLatitude() * amount, a.getLongitude() * amount);
-		}
-
-  /*This works by finding the bisecting vector of each angle and
-   * moving along the secting vector of distance dist/sin(angle/2) */
-
-		public ArrayList<ArrayList<LatLng>> computeSpiralsPolygonOffset()
-		{
-				ArrayList<ArrayList<LatLng>> spirals = new ArrayList<ArrayList<LatLng>>();
-				//quickHull(); //causing the fuckshit lines everywhere
-				spirals.add(points); //add first polygon
-				if (points.size() <= 2)
-				{
-						return spirals;
-				}
-
-				while (!isNonAdjacentLessThan10Meters(spirals.get(spirals.size() - 1)))
-				{
-						ArrayList<LatLng> lastSpiral = spirals.get(spirals.size() - 1);
-						if (lastSpiral.size() < 3)
-						{
-								return spirals;
-						}
-
-						LatLng centroid = computeCentroid(lastSpiral);
-						for (LatLng p : lastSpiral)
-						{
-								LatLng temp = new LatLng(centroid.getLatitude() - p.getLatitude(), centroid.getLongitude() - p.getLongitude());
-								if (calculateLength(temp) < transectDistance / 2)
-								{
-										return spirals;
+										result.put(key, entry.getValue());
 								}
 						}
-
-						ArrayList<LatLng> edgeVectors = new ArrayList<LatLng>();
-						for (int i = 0; i < lastSpiral.size() - 1; i++)
-						{
-								edgeVectors.add(findVector(lastSpiral.get(i), lastSpiral.get(i + 1)));
-						}
-						edgeVectors.add(findVector(lastSpiral.get(lastSpiral.size() - 1), lastSpiral.get(0)));
-						ArrayList<Double> interiorAngles = new ArrayList<Double>();
-						for (int i = 0; i < lastSpiral.size() - 1; i++)
-						{
-								LatLng v;
-								LatLng u;
-								if (i == 0)
-								{
-										v = subtract(lastSpiral.get(i), lastSpiral.get(lastSpiral.size() - 1));
-										u = subtract(lastSpiral.get(i), lastSpiral.get(i + 1));
-										interiorAngles.add(findInteriorAngle(v, u));
-										continue;
-								}
-								v = subtract(lastSpiral.get(i), lastSpiral.get(i + 1));
-								u = subtract(lastSpiral.get(i), lastSpiral.get(i - 1));
-								interiorAngles.add(findInteriorAngle(v, u));
-
-						}
-						LatLng v1 = subtract(lastSpiral.get(lastSpiral.size() - 1), lastSpiral.get(0));
-						LatLng u1 = subtract(lastSpiral.get(lastSpiral.size() - 1), lastSpiral.get(lastSpiral.size() - 2));
-						interiorAngles.add(findInteriorAngle(v1, u1));
-
-						ArrayList<LatLng> bisectingVectors = new ArrayList<LatLng>();
-						for (int i = 0; i < lastSpiral.size() - 1; i++)
-						{
-								LatLng v;
-								LatLng u;
-								if (i == 0)
-								{
-										v = subtract(lastSpiral.get(lastSpiral.size() - 1), lastSpiral.get(i));
-										u = subtract(lastSpiral.get(i + 1), lastSpiral.get(i));
-										bisectingVectors.add(findBisectNormal(v, u));
-										continue;
-								}
-								v = subtract(lastSpiral.get(i + 1), lastSpiral.get(i));
-								u = subtract(lastSpiral.get(i - 1), lastSpiral.get(i));
-								bisectingVectors.add(findBisectNormal(v, u));
-						}
-						LatLng v = subtract(lastSpiral.get(0), lastSpiral.get(lastSpiral.size() - 1));
-						LatLng u = subtract(lastSpiral.get(lastSpiral.size() - 2), lastSpiral.get(lastSpiral.size() - 1));
-						bisectingVectors.add(findBisectNormal(v, u));
-
-						ArrayList<LatLng> nextPolygon = new ArrayList<LatLng>();
-						for (int i = 0; i < lastSpiral.size(); i++)
-						{
-								LatLng point = lastSpiral.get(i);
-								LatLng nextPoint = multiply(bisectingVectors.get(i), -1 * transectDistance / 2 / Math.sin(interiorAngles.get(i) / 2));
-
-								nextPolygon.add(findVector(point, nextPoint));
-						}
-
-						for (int i = 0; i < nextPolygon.size() - 1; i++)
-						{
-								LatLng lastPoint0 = lastSpiral.get(i);
-								LatLng nextPoint0 = nextPolygon.get(i);
-								LatLng lastPoint1 = lastSpiral.get(i + 1);
-								LatLng nextPoint1 = nextPolygon.get(i + 1);
-								if (linesIntersect(lastPoint0.getLatitude(), lastPoint0.getLongitude(), nextPoint0.getLatitude(), nextPoint0.getLongitude(), lastPoint1.getLatitude(), lastPoint1.getLongitude(), nextPoint1.getLatitude(), nextPoint1.getLongitude()))
-								{
-										LatLng average = new LatLng((nextPoint0.getLatitude() + nextPoint1.getLatitude()) / 2, (nextPoint0.getLongitude() + nextPoint1.getLongitude()) / 2);
-										nextPolygon.set(i + 1, average);
-										nextPolygon.remove(i);
-								}
-						}
-						spirals.add((nextPolygon));
+						return result;
 				}
-				return spirals;
+
+				IntersectionMap sliceBySharedKey(Intersection i)
+				{
+						return sliceBySharedKey(i.first, i.second);
+				}
 		}
 
-		private static double relativeCCW(final double X1, final double Y1, double X2, double Y2, double PX,
-		                                  double PY)
+		boolean approxEq(double a, double b, double tolerance)
 		{
-				X2 -= X1;
-				Y2 -= Y1;
-				PX -= X1;
-				PY -= Y1;
-				double ccw = PX * Y2 - PY * X2;
-				if (ccw == 0)
-				{
-						ccw = PX * X2 + PY * Y2;
-						if (ccw > 0)
-						{
-								PX -= X2;
-								PY -= Y2;
-								ccw = PX * X2 + PY * Y2;
-								if (ccw < 0)
-								{
-										ccw = 0;
-								}
-						}
-				}
-				return (ccw < 0) ? -1 : ((ccw > 0) ? 1 : 0);
+				return Math.abs(b-a) <= tolerance;
 		}
 
-		public void getLawnmowerPath(double stepSize)
-		{
-				if (points.size() == 0)
-				{
-						return;
-				}
-				// Compute the bounding box
-			  /*Since we have to add the original point to the end we dont
-		     * want to edit the points arraylist */
-				ArrayList<LatLng> area = new ArrayList<LatLng>(points);
-				area.add(area.get(0)); //adds first point to end so the final vector can be computed...
-				double minLat = 360;
-				double maxLat = -360;
-				double minLon = 360;
-				double maxLon = -360;
-				Double curLat = null;
+		private ArrayList<LatLng> original_points = new ArrayList<>();
+		private ArrayList<Double[]> convex_xy = new ArrayList<>();
+		private ArrayList<Double[]> path_xy = new ArrayList<>();
+		private ArrayList<LatLng> path_points = new ArrayList<>();
+		private Double[] utm_centroid = new Double[2];
+		private Double[] local_centroid = new Double[2];
+		private UTM original_utm;
+		private AreaType area_type;
+		private double transect_distance = 10;
+		private double max_dist_to_centroid = -1;
+		private String logTag = "Region";
 
-				for (LatLng latLon : area)
-				{  //get list of points
-						if (latLon.getLatitude() > maxLat)
-						{ //if latlong.getLatitude()...
-								maxLat = latLon.getLatitude();
-						}
-						else if (latLon.getLatitude() < minLat)
-						{
-								minLat = latLon.getLatitude();
-						}
-						if (latLon.getLongitude() > maxLon)
-						{
-								maxLon = latLon.getLongitude();
-						}
-						else if (latLon.getLongitude() < minLon)
-						{
-								minLon = latLon.getLongitude();
-						}
-				}
-				curLat = minLat;
-				double totalLength = 0.0;
-				Double leftLon = null, rightLon = null; //locations
-				ArrayList<LatLng> path = new ArrayList<LatLng>();
-				while (curLat <= maxLat)
+		public Region (ArrayList<LatLng> _original_points, AreaType _area_type, double _transect_distance) throws Exception
+		{
+				original_points = (ArrayList<LatLng>)_original_points.clone();
+				convexHull();
+				area_type = _area_type;
+				transect_distance = _transect_distance;
+				switch (area_type)
 				{
-						// Left to right
-						leftLon = getMinLonAt(area, minLon, maxLon, curLat);
-						rightLon = getMaxLonAt(area, minLon, maxLon, curLat);
-						if (leftLon != null && rightLon != null)
-						{
-								path.add(new LatLng(curLat, leftLon));
-								path.add(new LatLng(curLat, rightLon));
-								totalLength += Math.abs((rightLon - leftLon) * LON_D_PER_M);
-						}
-						else
-						{
-						}
-						// Right to left
-						curLat = curLat + stepSize;
-						if (curLat <= maxLat)
-						{
-								totalLength += stepSize;
-								rightLon = getMaxLonAt(area, minLon, maxLon, curLat);
-								leftLon = getMinLonAt(area, minLon, maxLon, curLat);
-								if (leftLon != null && rightLon != null)
-								{
-										path.add(new LatLng(curLat, rightLon));
-										path.add(new LatLng(curLat, leftLon));
-										totalLength += Math.abs((rightLon - leftLon) * LON_D_PER_M);
-								}
-								else
-								{
-								}
-						}
-						curLat = curLat + stepSize;
-						if (curLat <= maxLat)
-						{
-								totalLength += stepSize;
-						}
+						case SPIRAL:
+								inwardNextHull(convex_xy, 0);
+								break;
+
+						case LAWNMOWER:
+								lawnMower(convex_xy);
+								break;
+
+						default:
+								Log.e(logTag, "Unknown region type");
+								throw new Exception("Unknown region type");
 				}
-				regionPoints = path;
 		}
 
-		public static Double getMinLonAt(ArrayList<LatLng> area, double minLon, double maxLon, double lat)
+		public Path convertToSimplePath()
 		{
-				final double lonDiff = 1.0 / 90000.0 * 10.0;
-				LatLng latLon = new LatLng(lat, minLon);
-				while (!isLocationInside(latLon, (ArrayList<LatLng>) area) && minLon <= maxLon)
+				// create a simple Path from path_points
+				path_points.clear();
+				for (Double[] p : path_xy)
 				{
-						minLon = minLon + lonDiff;
-						latLon = new LatLng(lat, minLon);
-						if (minLon > maxLon)
-						{
-								// Overshot (this part of the area is tiny), so ignore it by returning null
-								return null;
-						}
+						Log.v(logTag, String.format("final sequence point = [%.1f, %.1f]", p[0], p[1]));
+						// add back in the UTM offset
+						p[0] += utm_centroid[0];
+						p[1] += utm_centroid[1];
+						LatLong latLong = UTM.utmToLatLong(UTM.valueOf(original_utm.longitudeZone(), original_utm.latitudeZone(), p[0], p[1], SI.METER), ReferenceEllipsoid.WGS84);
+						path_points.add(new LatLng(latLong.latitudeValue(NonSI.DEGREE_ANGLE), latLong.longitudeValue(NonSI.DEGREE_ANGLE)));
 				}
-				return minLon;
+				return new Path(path_points);
 		}
 
-		private static Double getMaxLonAt(ArrayList<LatLng> area, double minLon, double maxLon, double lat)
+		private static double wrapToPi(double angle)
 		{
-				final double lonDiff = 1.0 / 90000.0 * 10.0;
-				LatLng latLon = new LatLng(lat, maxLon);
-				while (!isLocationInside(latLon, (ArrayList<LatLng>) area))
+				while (Math.abs(angle) > Math.PI)
 				{
-						maxLon = maxLon - lonDiff;
-						latLon = new LatLng(lat, maxLon);
-						if (maxLon < minLon)
-						{
-								// Overshot (this part of the area is tiny), so ignore it by returning null
-								return null;
-						}
+						angle -= 2*Math.PI*Math.signum(angle);
 				}
-				return maxLon;
+				return angle;
 		}
 
-		public static boolean isLocationInside(LatLng point, ArrayList<? extends LatLng> positions)
+		private static <T> ArrayList<T> shiftArrayList(ArrayList<T> aL, int shift)
 		{
-				boolean result = false;
-				LatLng p1 = positions.get(0);
-				for (int i = 1; i < positions.size(); i++)
+				while (Math.abs(shift) > aL.size())
 				{
-						LatLng p2 = positions.get(i);
+						shift -= aL.size()*Math.signum(shift);
+				}
+				if (shift < 0)
+				{
+						shift = aL.size() + shift; // shifting backward is like shifting forward by more
+				}
+				Log.v("Region", String.format("Shifting forward by %d", shift));
+				// https://stackoverflow.com/questions/29548488/shifting-in-arraylist
+				ArrayList<T> aL_clone = (ArrayList<T>)aL.clone();
+				if (aL.size() == 0)
+						return aL_clone;
 
-						if (((p2.getLatitude() <= point.getLatitude()
-										&& point.getLatitude() < p1.getLatitude())
-										|| (p1.getLatitude() <= point.getLatitude()
-										&& point.getLatitude() < p2.getLatitude()))
-										&& (point.getLongitude() < (p1.getLongitude() - p2.getLongitude())
-										* (point.getLatitude() - p2.getLatitude())
-										/ (p1.getLatitude() - p2.getLatitude()) + p2.getLongitude()))
+				T element = null;
+				for(int i = 0; i < shift; i++)
+				{
+						// remove last element, add it to front of the ArrayList
+						element = aL_clone.remove( aL_clone.size() - 1 );
+						aL_clone.add(0, element);
+				}
+
+				return aL_clone;
+		}
+
+		private Double[] difference(Double[] a, Double[] b)
+		{
+				return new Double[]{b[0] - a[0], b[1] - a[1]};
+		}
+
+		private double distance(Double[] a, Double[] b)
+		{
+				Double[] diff = difference(a, b);
+				return Math.sqrt(Math.pow(diff[0], 2.) + Math.pow(diff[1], 2.));
+		}
+		private double dot(Double[] a, Double[] b)
+		{
+				// a and b represent vector component magnitudes
+				return a[0]*b[0] + a[1]*b[1];
+		}
+
+		private double dotNormalized(Double[] a, Double[] b)
+		{
+				// a and b represent vector component magnitudes
+				double lengthA = Math.sqrt(Math.pow(a[0], 2.) + Math.pow(a[1], 2.));
+				double lengthB = Math.sqrt(Math.pow(b[0], 2.) + Math.pow(b[1], 2.));
+				return dot(a, b)/(lengthA*lengthB);
+		}
+
+		private double distanceToCentroid(Double[] a)
+		{
+				return distance(a, local_centroid);
+		}
+
+		private double[][] pairwiseDistances(ArrayList<Double[]> points)
+		{
+				double[][] result = new double[points.size()][points.size()];
+				for (int i = 0; i < points.size(); i++)
+				{
+						for (int j = 0; j < points.size(); j++)
 						{
-								result = !result;
+								result[i][j] = distance(points.get(i), points.get(j));
 						}
-						p1 = p2;
 				}
 				return result;
 		}
 
-		public static ArrayList<LatLng> orderCCWUpRight(ArrayList<LatLng> list)
+		private int[] diameterPair(ArrayList<Double[]> points)
 		{
-				if (list.size() < 3)
+				double[][] pairwise_distances = pairwiseDistances(points);
+				double max_dist = -1.;
+				int maxi = 0;
+				int maxj = 0;
+				for (int i = 0; i < points.size(); i++)
 				{
-						return list;
-				}
-				//look for most left up point
-				double minLat = 360;
-				double maxLat = -360;
-				double minLon = 360;
-				double maxLon = -360;
-
-				for (LatLng latLon : list)
-				{  //get list of points
-						if (latLon.getLatitude() > maxLat)
-						{ //if latlong.getLatitude()...
-								maxLat = latLon.getLatitude();
-						}
-						else if (latLon.getLatitude() < minLat)
+						for (int j = 0; j < points.size(); j++)
 						{
-								minLat = latLon.getLatitude();
-						}
-						if (latLon.getLongitude() > maxLon)
-						{
-								maxLon = latLon.getLongitude();
-						}
-						else if (latLon.getLongitude() < minLon)
-						{
-								minLon = latLon.getLongitude();
+								if (pairwise_distances[i][j] > max_dist)
+								{
+										maxi = i;
+										maxj = j;
+										max_dist = pairwise_distances[i][j];
+								}
 						}
 				}
+				return new int[]{maxi, maxj};
+		}
 
-				ArrayList<LatLng> reordered = new ArrayList<LatLng>();
-				int start = -1;
-				for (int i = 0; i < list.size(); i++)
+		private Boolean isInsideHull(ArrayList<Double[]> hull, Double[] p)
+		{
+				// assumes a hull, i.e. the order of points in the array matter!
+				ArrayList<Double> normal_angles = lineSegmentNormalAngles(hull);
+				Boolean isInside = true;
+				for (int j = 0; j < hull.size(); j++)
 				{
-						if (list.get(i).equals(new LatLng(maxLat, maxLon)))
+						Double[] normal = new Double[]{Math.cos(normal_angles.get(j)), Math.sin(normal_angles.get(j))};
+						Double[] diff = difference(hull.get(j), p);
+						if (dot(normal, diff) < 0)
 						{
-								start = i;
+								isInside = false;
 								break;
 						}
 				}
-				for (int i = start; i < list.size(); i++)
-				{
-						reordered.add(list.get(i));
-				}
-				for (int i = 0; i < start; i++)
-				{
-						reordered.add(list.get(i));
-				}
-				return reordered;
+				return isInside;
 		}
 
-		public static boolean linesIntersect(final double X1, final double Y1, final double X2, final double Y2, final double X3, final double Y3, final double X4, final double Y4)
+		private ArrayList<Boolean> isInsideHull(ArrayList<Double[]> hull, ArrayList<Double[]> points)
 		{
-				return ((relativeCCW(X1, Y1, X2, Y2, X3, Y3)
-								* relativeCCW(X1, Y1, X2, Y2, X4, Y4) <= 0) && (relativeCCW(X3,
-								Y3, X4, Y4, X1, Y1)
-								* relativeCCW(X3, Y3, X4, Y4, X2, Y2) <= 0));
+				// Check sign of dot product between
+				//     vector 1: vector from a vertex to the point in question
+				//     vector 2: the normal vector associated with that vertex's line
+				// If the dot product is negative, the point has to be outside of the hull
+				ArrayList<Boolean> result = new ArrayList<>();
+				ArrayList<Double> normal_angles = lineSegmentNormalAngles(hull);
+				for (int i = 0; i < points.size(); i++)
+				{
+						boolean isInside = true;
+						Double[] p = points.get(i);
+						//Log.d(logTag, String.format("isInside(): checking point = [%.1f, %.1f]", p[0], p[1]));
+						for (int j = 0; j < hull.size(); j++)
+						{
+								//Log.v(logTag, String.format("isInside(): hull vertex = [%.1f, %.1f]", hull.get(j)[0], hull.get(j)[1]));
+								Double[] normal = new Double[]{Math.cos(normal_angles.get(j)), Math.sin(normal_angles.get(j))};
+								Double[] diff = difference(hull.get(j), p);
+								//Log.v(logTag, String.format("isInside(): normal = [%.1f, %.1f],  vertex to point = [%.1f, %.1f], dot = %.1f",
+								//				normal[0], normal[1], diff[0], diff[1], dot(normal, diff)));
+								if (dot(normal, diff) < 0)
+								{
+										Log.v(logTag, String.format("isInside(): point %d is not inside", i));
+										isInside = false;
+										break;
+								}
+						}
+						result.add(isInside);
+				}
+				return result;
 		}
 
-		public double findInteriorAngle(LatLng a, LatLng b)
+		private Double[] calculateCentroid(ArrayList<Double[]> points)
 		{
-				double dot = dot(a, b);
-				double cross = a.getLatitude() * b.getLongitude() - a.getLongitude() * b.getLatitude();
-				double output = Math.atan2(dot, cross);
-				if (output < 0)
+				Double[] result = new Double[]{0.0, 0.0};
+				for (Double[] p : points)
 				{
-						output += Math.PI;
+						result[0] += p[0]/points.size();
+						result[1] += p[1]/points.size();
 				}
-				if (output == 0)
-				{
-						output = Math.PI / 2;
-				}
-				return Math.acos(dot(a, b) / (calculateLength(a) * calculateLength(b)));
+				return result;
 		}
+
+		private ArrayList<Double> lineSegmentNormalAngles(ArrayList<Double[]> points)
+		{
+				ArrayList<Double> result = new ArrayList<>();
+				for (int i = 0; i < points.size(); i++)
+				{
+						int j = (i+1) % points.size();
+						Double[] a = points.get(i);
+						Double[] b = points.get(j);
+						double raw_angle = Math.atan2(b[1]-a[1], b[0]-a[0]) + Math.PI/2.0;
+						result.add(wrapToPi(raw_angle));
+				}
+				return result;
+		}
+
+		private ArrayList<Double[]> unitNormalVector(ArrayList<Double[]> points)
+		{
+				ArrayList<Double> normal_angles = lineSegmentNormalAngles(points);
+				ArrayList<Double[]> result = new ArrayList<>();
+				for (int i = 0; i < points.size(); i++)
+				{
+						double angle = normal_angles.get(i);
+						result.add(new Double[] {Math.cos(angle), Math.sin(angle)});
+				}
+				return result;
+		}
+
+		private void inwardNextHull(ArrayList<Double[]> previous_hull, int inward_count)
+		{
+				// recursive. Given the previous set of points, calculate the next set of points. Append them to path_xy until the centroid is reached.
+				// the first points (i.e. path_xy is empty) are the first convex hull
+				// the final point is the centroid
+				Log.d(logTag, String.format("inwardNextHull called. path_xy has %d points", path_xy.size()));
+				if (path_xy.size() < 1)
+				{
+						// first call: just add convex hull to path and recurse
+						path_xy.addAll(previous_hull);
+						//path_xy.add(path_xy.get(0).clone()); // close the hull
+						inwardNextHull(previous_hull, 1);
+						return; // recursion stack unravels here, so return, now with path_xy fully populated
+				}
+
+
+				// find the normal angles of the line segments (make sure it points inward)
+				ArrayList<Double> normal_angles = lineSegmentNormalAngles(previous_hull);
+				ArrayList<Line> lines = new ArrayList<>();
+
+				// find the points if they were moved inward along their normal by the transect distance
+				int N = previous_hull.size();
+				for (int i = 0; i < N; i++)
+				{
+						Double[] p1 = previous_hull.get(i);
+						int j = (i+1) % N; // wrap the index
+						Double[] p2 = previous_hull.get(j);
+						double angle = normal_angles.get(i);
+
+						Log.v(logTag, String.format("Normal angle: %f", angle));
+						Double[] new_1 = new Double[]{
+										p1[0] + transect_distance*Math.cos(angle),
+										p1[1] + transect_distance*Math.sin(angle)};
+						Double[] new_2 = new Double[]{
+										p2[0] + transect_distance*Math.cos(angle),
+										p2[1] + transect_distance*Math.sin(angle)};
+						lines.add(new Line(i, new_1, new_2));
+				}
+
+				// all possible intersections - do not include if they are not inside the hull!
+				IntersectionMap intersections = new IntersectionMap();
+				for (int i = 0; i < N; i++)
+				{
+						for (int j = 0; j < N; j++)
+						{
+								if (i != j)
+								{
+										Pair<Integer, Integer> ij = new Pair<>(i, j);
+										if (!intersections.containsKey(ij))
+										{
+												Intersection intersection = lines.get(i).findIntersection(lines.get(j));
+												if (isInsideHull(previous_hull, intersection.p)) intersections.put(ij, intersection);
+										}
+								}
+						}
+				}
+
+				// there must be at least 3 intersections available, otherwise truncate
+				if (intersections.size() < 3)
+				{
+						Log.i(logTag, "There are less than 3 possible vertices, truncating");
+						path_xy.add(local_centroid);
+						return;
+				}
+
+				// find intercept closest to center of hull
+				ArrayList<Intersection> hull_intersections = new ArrayList<>();
+				hull_intersections.add(null);
+				double min_dist_to_centroid = 9999999;
+				for (Intersection intersection : intersections.values())
+				{
+						if (intersection.usable
+										&& intersection.distance_to_center < min_dist_to_centroid)
+						{
+								min_dist_to_centroid = intersection.distance_to_center;
+								hull_intersections.set(0, intersection);
+						}
+				}
+
+				// loop your way around, traveling on lines, always keeping a consistent clockwise motion
+				int junk = 0;
+				IntersectionMap next_possible_intersections;
+				do
+				{
+						Intersection last_intersection = hull_intersections.get(hull_intersections.size()-1);
+						// find all intercepts that share either i or j of current intercept
+						next_possible_intersections = intersections.sliceBySharedKey(last_intersection);
+
+						// trim that down so that we maintain a negative cross-product sign
+						//      (i.e. if we started clockwise, do not consider intercepts that would be counterclockwise)
+						Line line1, line2;
+						double max_angle = -Math.PI;
+						// need to use iterators so we can remove map entries while looping through the map
+						for (Iterator<Map.Entry<Pair<Integer, Integer>, Intersection>> it =
+						     next_possible_intersections.entrySet().iterator(); it.hasNext();)
+						{
+								Map.Entry<Pair<Integer, Integer>, Intersection> entry = it.next();
+								if (hull_intersections.size() < 2)
+								{
+										// use centroid as first point
+										line1 = new Line(-1, local_centroid, last_intersection.p);
+								}
+								else
+								{
+										line1 = new Line(-1, hull_intersections.get(hull_intersections.size()-2).p, last_intersection.p);
+								}
+								line2 = new Line(-1, last_intersection.p, entry.getValue().p);
+								double cross = line1.cross(line2);
+								if (cross >= -0.01)
+								{
+										it.remove();
+										continue;
+								}
+
+								double angle = line1.incidentAngle(line2);
+								if (angle > max_angle) max_angle = angle;
+						}
+
+						// also trim by angle
+						for (Iterator<Map.Entry<Pair<Integer, Integer>, Intersection>> it =
+						     next_possible_intersections.entrySet().iterator(); it.hasNext();)
+						{
+								Map.Entry<Pair<Integer, Integer>, Intersection> entry = it.next();
+
+								if (hull_intersections.size() < 2)
+								{
+										// use centroid as first point
+										line1 = new Line(-1, local_centroid, last_intersection.p);
+								}
+								else
+								{
+										line1 = new Line(-1, hull_intersections.get(hull_intersections.size()-2).p, last_intersection.p);
+								}
+								line2 = new Line(-1, last_intersection.p, entry.getValue().p);
+								double angle = line1.incidentAngle(line2);
+								if (!approxEq(angle, max_angle, 0.01))
+								{
+										it.remove();
+								}
+						}
+
+						if (next_possible_intersections.size() < 1) break;
+
+						// find the closest point and add it to hull
+						double dist = 9999999;
+						Intersection next_intersection = null;
+						for (Intersection intersection : next_possible_intersections.values())
+						{
+								double possible_dist = distance(last_intersection.p, intersection.p);
+								if (possible_dist < dist)
+								{
+										dist = possible_dist;
+										next_intersection = intersection;
+								}
+						}
+
+						if (hull_intersections.contains(next_intersection)) break; // next point has already been used
+
+						hull_intersections.add(next_intersection);
+				} while (true);
+
+				ArrayList<Double[]> points = new ArrayList<>();
+				for (Intersection intersection : hull_intersections)
+				{
+						points.add(intersection.p);
+				}
+				// there must be at least 3 intersections available, otherwise truncate
+				if (points.size() < 3)
+				{
+						Log.i(logTag, "There are less than 3 possible vertices, truncating");
+						path_xy.add(local_centroid);
+						return;
+				}
+
+				ArrayList<Double[]> new_hull = convexHull(points);
+				// OR if the new hull doesn't contain the previous center
+				if (!isInsideHull(new_hull, local_centroid))
+				{
+						Log.i(logTag, "New hull does not contain previous center, truncating");
+						path_xy.add(local_centroid);
+						return;
+				}
+
+				local_centroid = calculateCentroid(new_hull);
+				Log.i(logTag, String.format("New local centroid = [%.1f, %.1f]", local_centroid[0], local_centroid[1]));
+
+				double dist = 9999999;
+				int closest_index = 0;
+				for (int i = 0; i < new_hull.size(); i++)
+				{
+						double possible_dist = distance(new_hull.get(i), previous_hull.get(previous_hull.size()-1));
+						if (possible_dist < dist)
+						{
+								dist = possible_dist;
+								closest_index = i;
+						}
+				}
+				new_hull = shiftArrayList(new_hull, -(closest_index+1));
+
+				path_xy.addAll(new_hull);
+				//path_xy.add(new_hull.get(0).clone()); // close the hull before moving to inward hull
+
+				inward_count += 1;
+				inwardNextHull(new_hull, inward_count);
+		}
+
+		private void convexHull() throws Exception
+		{
+				// set convex_xy based on original_points
+				ArrayList<Double[]> utm_points = latLngToUTM(original_points);
+				ArrayList<Double[]> utm_hull = convexHull(utm_points);
+				convex_xy = zeroCentroid(utm_hull);
+				// Double[] should_be_zero_centroid = calculateCentroid(convex_xy);
+		}
+
+		private ArrayList<Double[]> convexHull(ArrayList<Double[]> points)
+		{
+				ArrayList<Integer> convex_indices = GrahamScan.getConvexHull(points);
+				ArrayList<Double[]> hull = new ArrayList<>();
+				for (Integer i : convex_indices)
+				{
+						hull.add(points.get(i));
+				}
+				return hull;
+		}
+
+		private ArrayList<Double[]> latLngToUTM(ArrayList<LatLng> points)
+		{
+				ArrayList<Double[]> result = new ArrayList<>();
+				for (LatLng wp : points)
+				{
+						UTM utm = UTM.latLongToUtm(LatLong.valueOf(wp.getLatitude(), wp.getLongitude(), NonSI.DEGREE_ANGLE), ReferenceEllipsoid.WGS84);
+						result.add(new Double[]{utm.eastingValue(SI.METER), utm.northingValue(SI.METER)});
+				}
+				original_utm = UTM.latLongToUtm(LatLong.valueOf(points.get(0).getLatitude(), points.get(0).getLongitude(), NonSI.DEGREE_ANGLE), ReferenceEllipsoid.WGS84);
+				return result;
+		}
+
+		private ArrayList<Double[]> zeroCentroid(ArrayList<Double[]> points)
+		{
+				utm_centroid = calculateCentroid(points);
+				local_centroid = new Double[]{0., 0.};
+				ArrayList<Double[]> result = new ArrayList<>();
+				for (int i = 0; i < points.size(); i++)
+				{
+						Double[] p = points.get(i);
+						result.add(new Double[]{p[0] - utm_centroid[0], p[1] - utm_centroid[1]});
+				}
+				return result;
+		}
+
+		private void lawnMower(ArrayList<Double[]> hull)
+		{
+				// TODO: fit rectangle over hull (rotated to have long axis sitting on hull diameter)
+				// TODO:    a) find diameter of points
+				int N = hull.size();
+				int[] diameter_pair_indices = diameterPair(hull);
+				ArrayList<Double[]> diameter_pair = new ArrayList<>();
+				diameter_pair.add(hull.get(diameter_pair_indices[0]));
+				diameter_pair.add(hull.get(diameter_pair_indices[1]));
+				path_xy.addAll(diameter_pair); // diameter points are included automatically
+
+				// TODO:    b) with line made from diameter pair, find point with most positive dot product
+				// TODO:        Need the normal unit vector of the diameter line
+				// TODO:    c) "", find point with most negative dot product
+				Line diameter_line = new Line(0,
+								hull.get(diameter_pair_indices[0]), hull.get(diameter_pair_indices[1]));
+				ArrayList<Double[]> diameter_normal_ = unitNormalVector(diameter_pair);
+				Double[] diameter_normal = diameter_normal_.get(0);
+
+				double most_positive_dot = 0.01;
+				double most_negative_dot = -0.01;
+				Double[] most_positive = null;
+				Double[] most_negative = null;
+				Double[] diameter_midpoint = new Double[]{
+								0.5*(diameter_line.p1[0] + diameter_line.p2[0]),
+								0.5*(diameter_line.p1[1] + diameter_line.p2[1])};
+				for (int i = 0; i < N; i++)
+				{
+						double dotn = dotNormalized(diameter_normal, difference(diameter_midpoint, hull.get(i)));
+						if (dotn > most_positive_dot)
+						{
+								most_positive_dot = dotn;
+								most_positive = hull.get(i);
+						}
+						else if (dotn < most_negative_dot)
+						{
+								most_negative_dot = dotn;
+								most_negative = hull.get(i);
+						}
+				}
+
+				double diameter_line_angle = Math.atan2(diameter_line.p2[1]-diameter_line.p1[1],
+								diameter_line.p2[0]-diameter_line.p1[0]);
+
+				boolean positive_loop_finished = false;
+				boolean negative_loop_finished = false;
+				double positive_line_angle, negative_line_angle;
+				double positive_distance = 0;
+				double negative_distance = 0;
+
+				// triangles mean the diameter is also one of the edges,
+				// so one of positive or negative directions must not occur
+				if (most_positive == null)
+				{
+						positive_loop_finished = true;
+				}
+				else
+				{
+						positive_line_angle = Math.atan2(most_positive[1]-diameter_line.p1[1],
+										most_positive[0]-diameter_line.p1[0]);
+						positive_distance = Math.abs(distance(diameter_line.p1, most_positive)
+										*Math.sin(positive_line_angle - diameter_line_angle));
+				}
+
+				if (most_negative == null)
+				{
+						negative_loop_finished = true;
+				}
+				else
+				{
+						negative_line_angle = Math.atan2(most_negative[1]-diameter_line.p1[1],
+										most_negative[0]-diameter_line.p1[0]);
+						negative_distance = Math.abs(distance(diameter_line.p1, most_negative)
+										*Math.sin(negative_line_angle - diameter_line_angle));
+				}
+
+				// TODO:    d) create lines from the hull, just like with spiral
+				ArrayList<Line> hull_lines = new ArrayList<>();
+				for (int i = 0; i < N; i++)
+				{
+						Double[] p1 = hull.get(i);
+						int j = (i+1) % N; // wrap the index
+						Double[] p2 = hull.get(j);
+						hull_lines.add(new Line(i, p1, p2));
+				}
+
+				// TODO: calculate equations for lines back and forth across this rectangle
+				// TODO:    a) start from the diameter
+				// TODO:    b) while you haven't overshot yet, create a line from two points shifted by the positive transect distance
+				// TODO:    c) find the left intersection, then the right (next iteration find right then left)
+				// TODO:       NOTE the intersections are between the crossing line and the HULL lines!!!
+
+				// TODO:    HOW DO YOU FIND INTERSECTIONS WITH THE CORRECT HULL LINE?
+				// TODO:    Could create a more strict version of findIntersect that treats the lines as line segments,
+				// TODO:        only returning a result if the intersection is located within both segments.
+				// TODO:    In this manner, you would check for intersections with every hull line, and it should
+				// TODO:        return exactly two points (unless it matches with a vertex exactly).
+				// TODO:    Find the intersection closest to the most recent intersection, and add that first,
+				// TODO:        then the other to create the zig zag.
+
+				// TODO:    d) add these intersections onto the end of an array to create the back and forth motion
+				// TODO:    e) continue until the line would be outside of the rectangle. Add the most positive dot product point as a final.
+				// TODO:    f) next, starting at the diameter again, use the negative transect distance this and repeat the loop
+				// TODO:       but instead of putting intersections at the end of the array, put them at zero
+				// TODO:       OR flip the array and put them at the end
+				// TODO:    g) and finally, once you overshoot, add the most negative dot product point as the final point
+
+				double shift_distance = transect_distance;
+				do
+				{
+						// shift diameter
+						Double[] dilated_normal_vector = new Double[]{
+										shift_distance*diameter_normal[0],
+										shift_distance*diameter_normal[1]};
+
+						Line positive_shifted_diameter = new Line(0,
+										new Double[]{diameter_line.p1[0] + dilated_normal_vector[0], diameter_line.p1[1] + dilated_normal_vector[1]},
+										new Double[]{diameter_line.p2[0] + dilated_normal_vector[0], diameter_line.p2[1] + dilated_normal_vector[1]});
+						Line negative_shifted_diameter = new Line(0,
+										new Double[]{diameter_line.p1[0] - dilated_normal_vector[0], diameter_line.p1[1] - dilated_normal_vector[1]},
+										new Double[]{diameter_line.p2[0] - dilated_normal_vector[0], diameter_line.p2[1] - dilated_normal_vector[1]});
+
+						if (!positive_loop_finished)
+						{
+								ArrayList<Double[]> positive_path = new ArrayList<>();
+								for (Line hull_line : hull_lines)
+								{
+										Intersection intersection;
+										intersection = positive_shifted_diameter.findIntersectionSegments(hull_line);
+										if (intersection != null) positive_path.add(intersection.p);
+								}
+								// find the point closer to the last point in path_xy
+								if (positive_path.size() == 2)
+								{
+										if (distance(positive_path.get(0), path_xy.get(path_xy.size() - 1)) < distance(positive_path.get(1), path_xy.get(path_xy.size() - 1)))
+										{
+												path_xy.add(positive_path.get(0));
+												path_xy.add(positive_path.get(1));
+										}
+										else
+										{
+												path_xy.add(positive_path.get(1));
+												path_xy.add(positive_path.get(0));
+										}
+								}
+						}
+						if (!negative_loop_finished)
+						{
+								ArrayList<Double[]> negative_path = new ArrayList<>();
+								for (Line hull_line : hull_lines)
+								{
+										Intersection intersection;
+										intersection = negative_shifted_diameter.findIntersectionSegments(hull_line);
+										if (intersection != null) negative_path.add(intersection.p);
+								}
+								// find the point closer to the first point in path_xy
+								if (negative_path.size() == 2)
+								{
+										if (distance(negative_path.get(0), path_xy.get(0)) < distance(negative_path.get(1), path_xy.get(0)))
+										{
+												path_xy.add(0, negative_path.get(0));
+												path_xy.add(0, negative_path.get(1));
+										}
+										else
+										{
+												path_xy.add(0, negative_path.get(1));
+												path_xy.add(0, negative_path.get(0));
+										}
+								}
+						}
+
+						shift_distance += transect_distance;
+
+						if (!positive_loop_finished && shift_distance >= positive_distance) positive_loop_finished = true;
+						if (!negative_loop_finished && shift_distance >= negative_distance) negative_loop_finished = true;
+				} while (!positive_loop_finished || !negative_loop_finished);
+
+				if (most_positive != null) path_xy.add(most_positive);
+				if (most_negative != null) path_xy.add(0, most_negative);
+		}
+
+
+
+
 }
