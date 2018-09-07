@@ -10,6 +10,7 @@ import com.platypus.crw.data.SensorData;
 import com.platypus.crw.data.Utm;
 import com.platypus.crw.data.UtmPose;
 
+import org.apache.commons.math3.util.Pair;
 import org.jscience.geography.coordinates.LatLong;
 import org.jscience.geography.coordinates.UTM;
 import org.jscience.geography.coordinates.crs.ReferenceEllipsoid;
@@ -40,6 +41,9 @@ public abstract class Boat
 		AtomicBoolean sensors_ready = new AtomicBoolean(false);
 		AtomicBoolean rc_override_is_on = new AtomicBoolean(false);
 		AtomicInteger current_waypoint_index = new AtomicInteger(-1);
+		HashMap<String, Float> key_value_map = new HashMap<>();
+		Pair<String, Float> last_key_value = new Pair<>("", 0.0f);
+		final Object key_value_lock = new Object();
 		String logTag = "Boat"; //Boat.class.getName();
 		LatLng currentLocation = null;
 		LatLng home_location = null;
@@ -70,7 +74,8 @@ public abstract class Boat
 						final Runnable sensorListenerCallback,
 						final Runnable waypointListenerCallback,
 						final Runnable crumbListenerCallback,
-						final Runnable rcOverrideListenerCallback);
+						final Runnable rcOverrideListenerCallback,
+						final Runnable keyValueListenerCallback);
 		abstract public void startWaypoints(final double[][] waypoints, final Runnable failureCallback);
 		abstract public void stopWaypoints(final Runnable failureCallback);
 		abstract public void updateControlSignals(final double thrust, final double heading, final Runnable failureCallback);
@@ -86,6 +91,7 @@ public abstract class Boat
 		abstract public void resetSampler(final Runnable successCallback, final Runnable failureCallback);
 		abstract public void setHome(final LatLng home, final Runnable successCallback, final Runnable failureCallback);
 		abstract public void goHome(final Runnable failureCallback);
+		abstract public void setKeyValue(String key, float value, final Runnable failureCallback);
 
 		public String getName() { return name; }
 		void setBoatColor(int _color) { boat_color = _color; }
@@ -198,6 +204,22 @@ public abstract class Boat
 				{
 						return new_crumb_LatLng;
 				}
+		}
+
+		Pair<String, Float> getLastKeyValue()
+		{
+			synchronized (key_value_lock)
+			{
+				return last_key_value;
+			}
+		}
+
+		void setLastKeyValue(String key, float value)
+		{
+			synchronized (key_value_lock)
+			{
+				last_key_value = new Pair<>(key, value);
+			}
 		}
 
 		static com.mapbox.mapboxsdk.geometry.LatLng jscienceLatLng_to_mapboxLatLng(org.jscience.geography.coordinates.LatLong jlatlng)

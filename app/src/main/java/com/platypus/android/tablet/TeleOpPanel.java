@@ -17,6 +17,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.measure.unit.NonSI;
 
+import org.apache.commons.math3.util.Pair;
 import org.jscience.geography.coordinates.LatLong;
 import org.jscience.geography.coordinates.UTM;
 import org.jscience.geography.coordinates.crs.ReferenceEllipsoid;
@@ -72,6 +73,7 @@ import com.platypus.android.tablet.Path.AreaType;
 import com.platypus.android.tablet.Path.Path;
 import com.platypus.android.tablet.Path.Region;
 import com.platypus.crw.CrwNetworkUtils;
+import com.platypus.crw.KeyValueListener;
 import com.platypus.crw.VehicleServer;
 import com.platypus.crw.data.SensorData;
 
@@ -377,7 +379,8 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 								new SensorDataReceivedRunnable(newBoat),
 								new WaypointStateReceivedRunnable(newBoat),
 								new CrumbReceivedRunnable(newBoat),
-								new RCOverrideUpdateRunnable(newBoat));
+								new RCOverrideUpdateRunnable(newBoat),
+								new KeyValueUpdateRunnable(newBoat));
 				boats_map.put(boat_name, newBoat);
 		}
 		class BoatMarkerUpdateRunnable implements Runnable
@@ -538,6 +541,26 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 								rc_override_warning.setText("");
 						}
 				}
+		}
+
+		class KeyValueUpdateRunnable implements Runnable
+		{
+			Boat boat;
+			String name;
+			KeyValueUpdateRunnable(Boat _boat)
+			{
+				boat = _boat;
+				name = boat.getName();
+			}
+			@Override
+			public void run()
+			{
+				Pair<String, Float> last_key_value = boat.getLastKeyValue();
+				String key = last_key_value.getFirst();
+				float value = last_key_value.getSecond();
+				// TODO: parse the key, if it is a specific key, manipulate the GUI
+				Toast.makeText(context, String.format("key-value update -- %s: %.2f", key, value), Toast.LENGTH_LONG).show();
+			}
 		}
 
 		class TabletLocationMarkerRunnable implements Runnable
