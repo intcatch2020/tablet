@@ -187,137 +187,18 @@
 
     </RelativeLayout>
 
-
-
-
-    <RelativeLayout
-        android:id="@+id/relativeLayout_sampler"
-        android:layout_width="wrap_content"
+    <TextView
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@drawable/border"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentBottom="true"
+        android:layout_below="@id/relativeLayout_boat"
         android:layout_alignRight="@id/relativeLayout_boat"
-        >
+        android:text="Paths"
+        android:textSize="20dp"
+        android:id="@+id/show_hide_paths"
+        android:clickable="true"
+        android:onClick="togglePathsView"
+        />
 
-        <RelativeLayout
-            android:id="@+id/relativeLayout_sampler_jar1"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentTop="true"
-            android:layout_alignParentLeft="true"
-            android:layout_marginLeft="10dp"
-            android:layout_marginTop="10dp">
-
-            <Button
-                android:id="@+id/jar1_button"
-                android:layout_width="42dp"
-                android:layout_height="50dp"
-                android:background="@drawable/jar_1"
-                />
-
-            <TextView
-                android:id="@+id/jar1_text"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_below="@id/jar1_button"
-                android:layout_centerHorizontal="true"
-                />
-
-        </RelativeLayout>
-
-        <RelativeLayout
-            android:id="@+id/relativeLayout_sampler_jar2"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentTop="true"
-            android:layout_centerInParent="true"
-            android:layout_marginTop="10dp">
-
-            <Button
-                android:id="@+id/jar2_button"
-                android:layout_width="42dp"
-                android:layout_height="50dp"
-                android:background="@drawable/jar_2"/>
-            <TextView
-                android:id="@+id/jar2_text"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_below="@id/jar2_button"
-                android:layout_centerHorizontal="true"
-                />
-
-        </RelativeLayout>
-
-        <RelativeLayout
-            android:id="@+id/relativeLayout_sampler_jar3"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentTop="true"
-            android:layout_alignParentRight="true"
-            android:layout_marginRight="10dp"
-            android:layout_marginTop="10dp">
-
-
-            <Button
-                android:id="@+id/jar3_button"
-                android:layout_width="42dp"
-                android:layout_height="50dp"
-                android:background="@drawable/jar_3"
-                />
-            <TextView
-                android:id="@+id/jar3_text"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_below="@id/jar3_button"
-                android:layout_centerHorizontal="true"
-                />
-
-        </RelativeLayout>
-
-        <RelativeLayout
-            android:id="@+id/relativeLayout_sampler_jar4"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/relativeLayout_sampler_jar1"
-            android:layout_alignParentLeft="true"
-            android:layout_marginLeft="10dp"
-            >
-
-            <Button
-                android:id="@+id/jar4_button"
-                android:layout_width="42dp"
-                android:layout_height="50dp"
-                android:background="@drawable/jar_4"/>
-            <TextView
-                android:id="@+id/jar4_text"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_below="@id/jar4_button"
-                android:layout_centerHorizontal="true"
-                />
-        </RelativeLayout>
-
-        <Button
-            android:id="@+id/sampler_stop_all_button"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_centerInParent="true"
-            android:layout_below="@id/relativeLayout_sampler_jar2"
-            android:background="@drawable/stop_button"
-            android:layout_marginTop="5dp"/>
-
-        <Button
-            android:id="@+id/sampler_reset_button"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_alignParentRight="true"
-            android:layout_below="@id/relativeLayout_sampler_jar3"
-            android:layout_marginRight="12dp"
-            android:layout_marginTop="5dp"
-            android:background="@drawable/reset"/>
-
-    </RelativeLayout>
 
     <RelativeLayout
         android:id="@+id/relativeLayout_paths"
@@ -325,8 +206,7 @@
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
         android:layout_alignRight="@id/relativeLayout_boat"
-        android:layout_below="@id/relativeLayout_boat"
-        android:layout_above="@id/relativeLayout_sampler"
+        android:layout_below="@id/show_hide_paths"
 
         android:background="@drawable/border"
         android:orientation="vertical"
@@ -460,6 +340,198 @@
                 />
 
         </RelativeLayout>
+
+    </RelativeLayout>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/relativeLayout_paths"
+        android:layout_alignRight="@id/relativeLayout_boat"
+        android:text="Peristaltic Pump"
+        android:textSize="20dp"
+        android:id="@+id/show_hide_pump"
+        android:clickable="true"
+        android:onClick="togglePumpView"
+        />
+
+    <RelativeLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/relativeLayout_pump"
+        android:layout_below="@id/show_hide_pump"
+        android:layout_alignRight="@id/relativeLayout_boat"
+        android:layout_alignParentLeft="true"
+        android:background="@drawable/border"
+        >
+
+        <Button
+            android:id="@+id/pump_on_button"
+            android:layout_width="42dp"
+            android:layout_height="50dp"
+            android:background="@drawable/play_button"
+            android:layout_alignParentLeft="true"
+            />
+        <Button
+            android:id="@+id/pump_off_button"
+            android:layout_width="42dp"
+            android:layout_height="50dp"
+            android:layout_marginLeft="10dp"
+            android:background="@drawable/stop_button"
+            android:layout_toRightOf="@id/pump_on_button"
+            />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toRightOf="@id/pump_off_button"
+            android:layout_marginLeft="10dp"
+            android:textSize="20dp"
+            android:id="@+id/pump_is_on_text"
+            android:text="OFF"
+            />
+
+
+    </RelativeLayout>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/relativeLayout_pump"
+        android:layout_alignRight="@id/relativeLayout_boat"
+        android:text="Platypus Sampler"
+        android:textSize="20dp"
+        android:id="@+id/show_hide_sampler"
+        android:clickable="true"
+        android:onClick="toggleSamplerView"
+        />
+
+    <RelativeLayout
+        android:id="@+id/relativeLayout_sampler"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/border"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentBottom="true"
+        android:layout_alignRight="@id/relativeLayout_boat"
+        android:layout_below="@id/show_hide_sampler"
+        >
+
+        <RelativeLayout
+            android:id="@+id/relativeLayout_sampler_jar1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentLeft="true"
+            android:layout_marginLeft="10dp"
+            android:layout_marginTop="10dp">
+
+            <Button
+                android:id="@+id/jar1_button"
+                android:layout_width="42dp"
+                android:layout_height="50dp"
+                android:background="@drawable/jar_1"
+                />
+
+            <TextView
+                android:id="@+id/jar1_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/jar1_button"
+                android:layout_centerHorizontal="true"
+                />
+
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:id="@+id/relativeLayout_sampler_jar2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_centerInParent="true"
+            android:layout_marginTop="10dp">
+
+            <Button
+                android:id="@+id/jar2_button"
+                android:layout_width="42dp"
+                android:layout_height="50dp"
+                android:background="@drawable/jar_2"/>
+            <TextView
+                android:id="@+id/jar2_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/jar2_button"
+                android:layout_centerHorizontal="true"
+                />
+
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:id="@+id/relativeLayout_sampler_jar3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentRight="true"
+            android:layout_marginRight="10dp"
+            android:layout_marginTop="10dp">
+
+
+            <Button
+                android:id="@+id/jar3_button"
+                android:layout_width="42dp"
+                android:layout_height="50dp"
+                android:background="@drawable/jar_3"
+                />
+            <TextView
+                android:id="@+id/jar3_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/jar3_button"
+                android:layout_centerHorizontal="true"
+                />
+
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:id="@+id/relativeLayout_sampler_jar4"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/relativeLayout_sampler_jar1"
+            android:layout_alignParentLeft="true"
+            android:layout_marginLeft="10dp"
+            >
+
+            <Button
+                android:id="@+id/jar4_button"
+                android:layout_width="42dp"
+                android:layout_height="50dp"
+                android:background="@drawable/jar_4"/>
+            <TextView
+                android:id="@+id/jar4_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/jar4_button"
+                android:layout_centerHorizontal="true"
+                />
+        </RelativeLayout>
+
+        <Button
+            android:id="@+id/sampler_stop_all_button"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_centerInParent="true"
+            android:layout_below="@id/relativeLayout_sampler_jar2"
+            android:background="@drawable/stop_button"
+            android:layout_marginTop="5dp"/>
+
+        <Button
+            android:id="@+id/sampler_reset_button"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_alignParentRight="true"
+            android:layout_below="@id/relativeLayout_sampler_jar3"
+            android:layout_marginRight="12dp"
+            android:layout_marginTop="5dp"
+            android:background="@drawable/reset"/>
 
     </RelativeLayout>
 

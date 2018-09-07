@@ -69,6 +69,7 @@ import android.support.v4.content.ContextCompat;
 import android.view.MenuItem;
 import android.view.View;
 
+import com.mapbox.mapboxsdk.storage.Resource;
 import com.platypus.android.tablet.Path.AreaType;
 import com.platypus.android.tablet.Path.Path;
 import com.platypus.android.tablet.Path.Region;
@@ -151,6 +152,27 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 				}
 		}
 
+		// TODO: ASDF
+		public void toggleView(View v)
+		{
+			v.setVisibility( v.isShown() ? View.GONE : View.VISIBLE );
+		}
+		public void toggleSamplerView(View v)
+		{
+			RelativeLayout a = (RelativeLayout) this.findViewById(R.id.relativeLayout_sampler);
+			toggleView(a);
+		}
+		public void togglePathsView(View v)
+		{
+			RelativeLayout a = (RelativeLayout) this.findViewById(R.id.relativeLayout_paths);
+			toggleView(a);
+		}
+		public void togglePumpView(View v)
+		{
+			RelativeLayout a = (RelativeLayout) this.findViewById(R.id.relativeLayout_pump);
+			toggleView(a);
+		}
+
 		final Context context = this;
 		TextView ipAddressBox = null;
 		RelativeLayout linlay = null;
@@ -174,6 +196,8 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 		Button lawnmower_button = null;
 		Button reverse_order_button = null;
 		Button simple_path_button = null;
+		Button pump_start_button = null;
+		Button pump_stop_button = null;
 		Button jar1_button = null;
 		Button jar2_button = null;
 		Button jar3_button = null;
@@ -181,6 +205,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 		Button sampler_reset_button = null;
 		Button sampler_stop_all_button = null;
 
+		TextView pump_is_on_text = null;
 		TextView jar1_text = null;
 		TextView jar2_text = null;
 		TextView jar3_text = null;
@@ -559,7 +584,19 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 				String key = last_key_value.getFirst();
 				float value = last_key_value.getSecond();
 				// TODO: parse the key, if it is a specific key, manipulate the GUI
-				Toast.makeText(context, String.format("key-value update -- %s: %.2f", key, value), Toast.LENGTH_LONG).show();
+				// Toast.makeText(context, String.format("key-value update -- %s: %.2f", key, value), Toast.LENGTH_LONG).show();
+				if (key.equals("flag"))
+				{
+					if (value == 1)
+					{
+						pump_is_on_text.setText("ON");
+					}
+					else if (value == 0)
+					{
+						pump_is_on_text.setText("OFF");
+					}
+
+				}
 			}
 		}
 
@@ -694,6 +731,12 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 				color_map.get(5).put("line", ContextCompat.getColor(context, R.color.yellow_dark));
 
 				linlay = (RelativeLayout) this.findViewById(R.id.linlay);
+
+				RelativeLayout pump = (RelativeLayout) this.findViewById(R.id.relativeLayout_pump);
+				pump.setVisibility(View.GONE);
+				RelativeLayout sampler = (RelativeLayout) this.findViewById(R.id.relativeLayout_sampler);
+				sampler.setVisibility(View.GONE);
+
 				ipAddressBox = (TextView) this.findViewById(R.id.printIpAddress);
 				connect_button = (Button) this.findViewById(R.id.connectButton);
 				start_wp_button = (Button) this.findViewById(R.id.start_button);
@@ -716,6 +759,10 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 				lawnmower_button = (Button) this.findViewById(R.id.lawnmower_button);
 				reverse_order_button = (Button) this.findViewById(R.id.reverse_order_button);
 				simple_path_button = (Button) this.findViewById(R.id.simple_path_button);
+
+				pump_start_button = (Button) this.findViewById(R.id.pump_on_button);
+				pump_stop_button = (Button) this.findViewById(R.id.pump_off_button);
+				pump_is_on_text = (TextView) this.findViewById(R.id.pump_is_on_text);
 
 				jar1_button = (Button) this.findViewById(R.id.jar1_button);
 				jar2_button = (Button) this.findViewById(R.id.jar2_button);
@@ -1646,6 +1693,36 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 												new ToastFailureCallback("Sampler Stop All Msg timed out"));
 								return false;
 						}
+				});
+
+				// TODO: ASDF
+				pump_start_button.setOnClickListener(new OnClickListener() {
+					@Override
+					public void onClick(View view) {
+						Boat current_boat = currentBoat();
+						if (current_boat != null)
+						{
+							current_boat.setKeyValue("flag", 1.0f, new ToastFailureCallback("could not start pump"));
+						}
+						else
+						{
+							Toast.makeText(context, "Connect to a boat first", Toast.LENGTH_SHORT).show();
+						}
+					}
+				});
+				pump_stop_button.setOnClickListener(new OnClickListener() {
+					@Override
+					public void onClick(View view) {
+						Boat current_boat = currentBoat();
+						if (current_boat != null)
+						{
+							current_boat.setKeyValue("flag", 0.0f, new ToastFailureCallback("could not stop pump"));
+						}
+						else
+						{
+							Toast.makeText(context, "Connect to a boat first", Toast.LENGTH_SHORT).show();
+						}
+					}
 				});
 
 				location_listener = new LocationListener()
