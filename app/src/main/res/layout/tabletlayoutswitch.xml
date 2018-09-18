@@ -371,6 +371,9 @@
             android:layout_height="50dp"
             android:background="@drawable/play_button"
             android:layout_alignParentLeft="true"
+            android:layout_alignParentTop="true"
+            android:layout_marginTop="5dp"
+            android:layout_marginLeft="5dp"
             />
         <Button
             android:id="@+id/pump_off_button"
@@ -379,15 +382,41 @@
             android:layout_marginLeft="10dp"
             android:background="@drawable/stop_button"
             android:layout_toRightOf="@id/pump_on_button"
+            android:layout_alignParentTop="true"
+            android:layout_marginTop="5dp"
             />
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_toRightOf="@id/pump_off_button"
             android:layout_marginLeft="10dp"
+            android:layout_alignParentTop="true"
             android:textSize="20dp"
             android:id="@+id/pump_is_on_text"
             android:text=""
+            android:layout_marginTop="5dp"
+            />
+
+        <Spinner
+            android:id="@+id/peristaltic_pump_mode_spinner"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/pump_is_on_text"
+            android:layout_toRightOf="@id/pump_off_button"
+            android:entries="@array/spinner_pump_mode_entries"
+            android:prompt="@string/speed_prompt">
+        </Spinner>
+
+        <TextView
+            android:id="@+id/peristaltic_hm_measurement_counter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/pump_off_button"
+            android:layout_alignParentLeft="true"
+            android:layout_marginLeft="5dp"
+            android:text=""
+
+
             />
 
 

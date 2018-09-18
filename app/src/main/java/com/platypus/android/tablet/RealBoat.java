@@ -590,6 +590,32 @@ public class RealBoat extends Boat
 		}
 
 		@Override
+		public void getKeyValue(final String key, final Runnable failureCallback)
+		{
+			class GetKeyValueAsync extends AsyncTask<Void, Void, Void>
+			{
+
+				@Override
+				protected Void doInBackground(Void... voids) {
+					server.getKeyValue(key, new FunctionObserver<Void>() {
+						@Override
+						public void completed(Void aVoid) {
+							Log.i(logTag, String.format("get key-value: %s", key));
+						}
+
+						@Override
+						public void failed(FunctionError functionError) {
+							Log.w(logTag, "get key-value failed");
+							uiHandler.post(failureCallback);
+						}
+					});
+					return null;
+				}
+			}
+			new GetKeyValueAsync().execute();
+		}
+
+		@Override
 		public void sendAutonomousPredicateMessage(final String apm, final Runnable failureCallback)
 		{
 				// TODO: need user interface to generate APMs

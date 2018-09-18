@@ -92,6 +92,7 @@ public abstract class Boat
 		abstract public void setHome(final LatLng home, final Runnable successCallback, final Runnable failureCallback);
 		abstract public void goHome(final Runnable failureCallback);
 		abstract public void setKeyValue(String key, float value, final Runnable failureCallback);
+		abstract public void getKeyValue(String key, final Runnable failureCallback);
 
 		public String getName() { return name; }
 		void setBoatColor(int _color) { boat_color = _color; }

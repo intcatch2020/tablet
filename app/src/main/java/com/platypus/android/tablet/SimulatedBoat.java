@@ -604,6 +604,11 @@ public class SimulatedBoat extends Boat
 
 	}
 
+	@Override
+	public void getKeyValue(String key, Runnable failureCallback) {
+
+	}
+
 
 	///////////////////////////////////////////////////////////////////////////
 		// BREADCRUMBS STUFF

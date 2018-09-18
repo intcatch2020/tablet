@@ -206,6 +206,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 		Button sampler_stop_all_button = null;
 
 		TextView pump_is_on_text = null;
+		TextView hm_measurement_count_text = null;
 		TextView jar1_text = null;
 		TextView jar2_text = null;
 		TextView jar3_text = null;
@@ -223,6 +224,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 		private boolean speed_spinner_erroneous_call = true;
 		Spinner speed_spinner = null;
 		Spinner available_boats_spinner = null;
+		Spinner peristaltic_pump_mode_spinner = null;
 		ColorfulSpinnerAdapter available_boats_spinner_adapter = null;
 
 		Handler uiHandler = new Handler(Looper.getMainLooper()); // anything post to this is run on the main GUI thread
@@ -585,17 +587,28 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 				float value = last_key_value.getSecond();
 				// TODO: parse the key, if it is a specific key, manipulate the GUI
 				// Toast.makeText(context, String.format("key-value update -- %s: %.2f", key, value), Toast.LENGTH_LONG).show();
-				if (key.equals("pump_on"))
+				switch (key)
 				{
-					if (value == 1)
+					case "pump_on":
 					{
-						pump_is_on_text.setText("ON");
+						if (value == 1)
+						{
+							pump_is_on_text.setText("ON");
+						}
+						else if (value == 0)
+						{
+							pump_is_on_text.setText("OFF");
+						}
+						break;
 					}
-					else if (value == 0)
+					case "hm_measurement_count":
 					{
-						pump_is_on_text.setText("OFF");
+						hm_measurement_count_text.setText(String.format("Meas. count = %d", (int)value));
+						break;
 					}
-
+					default:
+						Toast.makeText(context, String.format("Unknown key-value  %s: %f", key, value), Toast.LENGTH_LONG).show();
+						break;
 				}
 			}
 		}
@@ -763,6 +776,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 				pump_start_button = (Button) this.findViewById(R.id.pump_on_button);
 				pump_stop_button = (Button) this.findViewById(R.id.pump_off_button);
 				pump_is_on_text = (TextView) this.findViewById(R.id.pump_is_on_text);
+				hm_measurement_count_text = (TextView) this.findViewById(R.id.peristaltic_hm_measurement_counter);
 
 				jar1_button = (Button) this.findViewById(R.id.jar1_button);
 				jar2_button = (Button) this.findViewById(R.id.jar2_button);
@@ -791,6 +805,8 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 				speed_spinner_erroneous_call = true; // reset the erroneous call boolean
 				speed_spinner = (Spinner) this.findViewById(R.id.speed_spinner);
 				set_speed_spinner_from_pref();
+
+				peristaltic_pump_mode_spinner = (Spinner) this.findViewById(R.id.peristaltic_pump_mode_spinner);
 
 				available_boats_spinner = (Spinner) this.findViewById(R.id.boat_name_spinner);
 				available_boats_spinner_adapter = new ColorfulSpinnerAdapter(this, R.layout.boat_name);
@@ -1702,7 +1718,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 						Boat current_boat = currentBoat();
 						if (current_boat != null)
 						{
-							current_boat.setKeyValue("flag", 1.0f, new ToastFailureCallback("could not start pump"));
+							current_boat.setKeyValue("pump_on", 1.0f, new ToastFailureCallback("could not start pump"));
 						}
 						else
 						{
@@ -1716,7 +1732,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 						Boat current_boat = currentBoat();
 						if (current_boat != null)
 						{
-							current_boat.setKeyValue("flag", 0.0f, new ToastFailureCallback("could not stop pump"));
+							current_boat.setKeyValue("pump_on", 0.0f, new ToastFailureCallback("could not stop pump"));
 						}
 						else
 						{
@@ -1724,6 +1740,43 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 						}
 					}
 				});
+
+                peristaltic_pump_mode_spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener()
+                {
+                    @Override
+                    public void onItemSelected(AdapterView<?> parent, View view, int position, long id)
+                    {
+                        String item = String.valueOf(peristaltic_pump_mode_spinner.getSelectedItem());
+                        Boat boat = currentBoat();
+                        if (boat != null)
+                        {
+                            switch (item) {
+                                case "Single":
+                                {
+                                    boat.setKeyValue("hm_continuous", 0.0f, new ToastFailureCallback("Could not set peristaltic pump mode"));
+                                    break;
+                                }
+                                case "Continuous":
+                                {
+                                    boat.setKeyValue("hm_continuous", 1.0f, new ToastFailureCallback("Could not set peristaltic pump mode"));
+                                    break;
+                                }
+                                default:
+                                    break;
+                            }
+                        }
+                        else
+                        {
+                            Toast.makeText(context, "Connect to a boat first", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+
+                    @Override
+                    public void onNothingSelected(AdapterView<?> adapterView) {
+
+                    }
+                });
+
 
 				location_listener = new LocationListener()
 				{
