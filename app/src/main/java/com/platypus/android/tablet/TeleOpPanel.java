@@ -585,7 +585,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 				float value = last_key_value.getSecond();
 				// TODO: parse the key, if it is a specific key, manipulate the GUI
 				// Toast.makeText(context, String.format("key-value update -- %s: %.2f", key, value), Toast.LENGTH_LONG).show();
-				if (key.equals("flag"))
+				if (key.equals("pump_on"))
 				{
 					if (value == 1)
 					{
