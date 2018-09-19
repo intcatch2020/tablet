@@ -606,6 +606,15 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 						hm_measurement_count_text.setText(String.format("Meas. count = %d", (int)value));
 						break;
 					}
+					case "hm_mode":
+					{
+						String msg = "";
+						if (value == 2.f) msg = "Peristaltic pump now in RINSE mode";
+						if (value == 1.f) msg = "Peristaltic pump now in CONTINUOUS mode";
+						if (value == 0.f) msg = "Peristaltic pump now in SINGLE mode";
+						Toast.makeText(context, msg, Toast.LENGTH_LONG).show();
+						break;
+					}
 					default:
 						Toast.makeText(context, String.format("Unknown key-value  %s: %f", key, value), Toast.LENGTH_LONG).show();
 						break;
@@ -1753,14 +1762,19 @@ public class TeleOpPanel extends Activity implements SensorEventListener
                             switch (item) {
                                 case "Single":
                                 {
-                                    boat.setKeyValue("hm_continuous", 0.0f, new ToastFailureCallback("Could not set peristaltic pump mode"));
+                                    boat.setKeyValue("hm_mode", 0.0f, new ToastFailureCallback("Could not set peristaltic pump mode"));
                                     break;
                                 }
                                 case "Continuous":
                                 {
-                                    boat.setKeyValue("hm_continuous", 1.0f, new ToastFailureCallback("Could not set peristaltic pump mode"));
+                                    boat.setKeyValue("hm_mode", 1.0f, new ToastFailureCallback("Could not set peristaltic pump mode"));
                                     break;
                                 }
+								case "Rinse":
+								{
+									boat.setKeyValue("hm_mode", 2.0f, new ToastFailureCallback("Could not set peristaltic pump mode"));
+									break;
+								}
                                 default:
                                     break;
                             }
