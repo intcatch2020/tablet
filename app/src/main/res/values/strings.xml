@@ -45,6 +45,12 @@
         <item>CUSTOM</item>
     </string-array>
 
+    <string-array name="spinner_pump_mode_entries">
+        <item>Single</item>
+        <item>Continuous</item>
+        <item>Rinse</item>
+    </string-array>
+
 
 
 

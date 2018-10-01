@@ -40,6 +40,7 @@ public class SimulatedBoat extends Boat
 		Runnable _waypointListenerCallback = null;
 		Runnable _crumbListenerCallback = null;
 		Runnable _rcOverrideListenerCallback = null;
+		Runnable _keyValueListenerCallback = null;
 		final double NEW_CRUMB_DISTANCE = 10; // meters
 		boolean executing_failsafe = false;
 		double[][] _waypoints = new double[0][0];
@@ -434,20 +435,22 @@ public class SimulatedBoat extends Boat
 		                            final Runnable sensorListenerCallback,
 		                            final Runnable waypointListenerCallback,
 		                            final Runnable crumbListenerCallback,
-		                            final Runnable rcOverrideListenerCallback)
+		                            final Runnable rcOverrideListenerCallback,
+									final Runnable keyValueListenerCallback)
 		{
 				_poseListenerCallback = poseListenerCallback;
 				_sensorListenerCallback = sensorListenerCallback;
 				_waypointListenerCallback = waypointListenerCallback;
 				_crumbListenerCallback = crumbListenerCallback;
 				_rcOverrideListenerCallback = rcOverrideListenerCallback;
+				_keyValueListenerCallback = keyValueListenerCallback;
 				polling_thread_pool = new ScheduledThreadPoolExecutor(1);
 				polling_thread_pool.scheduleAtFixedRate(
 								kinematicSimulationLoop, 0, DYNAMICS_POLL_MS, TimeUnit.MILLISECONDS);
 				Log.i("ODE", "Started simulation thread");
 		}
 
-		@Override
+	@Override
 		public void startWaypoints(double[][] waypoints, Runnable failureCallback)
 		{
 				synchronized (waypoints_lock)
@@ -596,8 +599,18 @@ public class SimulatedBoat extends Boat
 				// TODO: switch to A* method of going home
 		}
 
+	@Override
+	public void setKeyValue(String key, float value, Runnable failureCallback) {
 
-		///////////////////////////////////////////////////////////////////////////
+	}
+
+	@Override
+	public void getKeyValue(String key, Runnable failureCallback) {
+
+	}
+
+
+	///////////////////////////////////////////////////////////////////////////
 		// BREADCRUMBS STUFF
 		///////////////////////////////////////////////////////////////////////////
 
