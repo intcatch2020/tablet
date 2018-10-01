@@ -41,6 +41,7 @@ public class SimulatedBoat extends Boat
 		Runnable _crumbListenerCallback = null;
 		Runnable _rcOverrideListenerCallback = null;
 		Runnable _keyValueListenerCallback = null;
+		Runnable _homeListenerCallback = null;
 		final double NEW_CRUMB_DISTANCE = 10; // meters
 		boolean executing_failsafe = false;
 		double[][] _waypoints = new double[0][0];
@@ -436,7 +437,8 @@ public class SimulatedBoat extends Boat
 		                            final Runnable waypointListenerCallback,
 		                            final Runnable crumbListenerCallback,
 		                            final Runnable rcOverrideListenerCallback,
-									final Runnable keyValueListenerCallback)
+									final Runnable keyValueListenerCallback,
+									final Runnable homeListenerCallback)
 		{
 				_poseListenerCallback = poseListenerCallback;
 				_sensorListenerCallback = sensorListenerCallback;
@@ -444,6 +446,7 @@ public class SimulatedBoat extends Boat
 				_crumbListenerCallback = crumbListenerCallback;
 				_rcOverrideListenerCallback = rcOverrideListenerCallback;
 				_keyValueListenerCallback = keyValueListenerCallback;
+				_homeListenerCallback = homeListenerCallback;
 				polling_thread_pool = new ScheduledThreadPoolExecutor(1);
 				polling_thread_pool.scheduleAtFixedRate(
 								kinematicSimulationLoop, 0, DYNAMICS_POLL_MS, TimeUnit.MILLISECONDS);

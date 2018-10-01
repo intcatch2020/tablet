@@ -48,6 +48,7 @@ public abstract class Boat
 		LatLng currentLocation = null;
 		LatLng home_location = null;
 		final Object location_lock = new Object();
+		final Object home_lock = new Object();
 		LatLng new_crumb_LatLng = null;
 		UTM new_crumb_UTM = null;
 		HashMap<Long, double[]> crumb_map= new HashMap<>();
@@ -75,7 +76,8 @@ public abstract class Boat
 						final Runnable waypointListenerCallback,
 						final Runnable crumbListenerCallback,
 						final Runnable rcOverrideListenerCallback,
-						final Runnable keyValueListenerCallback);
+						final Runnable keyValueListenerCallback,
+						final Runnable homeListenerCallback);
 		abstract public void startWaypoints(final double[][] waypoints, final Runnable failureCallback);
 		abstract public void stopWaypoints(final Runnable failureCallback);
 		abstract public void updateControlSignals(final double thrust, final double heading, final Runnable failureCallback);
@@ -110,7 +112,10 @@ public abstract class Boat
 
 		LatLng getHome()
 		{
+			synchronized (home_lock)
+			{
 				return home_location;
+			}
 		}
 
 		double getYaw()

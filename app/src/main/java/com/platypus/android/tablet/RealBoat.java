@@ -6,6 +6,7 @@ import android.util.Log;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.platypus.crw.CrumbListener;
 import com.platypus.crw.FunctionObserver;
+import com.platypus.crw.HomeListener;
 import com.platypus.crw.KeyValueListener;
 import com.platypus.crw.PoseListener;
 import com.platypus.crw.RCOverrideListener;
@@ -40,6 +41,7 @@ public class RealBoat extends Boat
 		private CrumbListener cl;
 		private RCOverrideListener rcol;
 		private KeyValueListener kvl;
+		private HomeListener hl;
 		private final int CONNECTION_POLL_S = 1;
 		private final int WAYPOINTS_INDEX_POLL_S = 1;
 
@@ -110,7 +112,8 @@ public class RealBoat extends Boat
 		                            final Runnable waypointListenerCallback,
 		                            final Runnable crumbListenerCallback,
 		                            final Runnable rcOverrideListenerCallback,
-									final Runnable keyValueListenerCallback)
+									final Runnable keyValueListenerCallback,
+									final Runnable homeListenerCallback)
 		{
 				pl = new PoseListener()
 				{
@@ -214,6 +217,14 @@ public class RealBoat extends Boat
 						uiHandler.post(keyValueListenerCallback); // update GUI with result
 					}
 				};
+				hl = new HomeListener() {
+					@Override
+					public void receivedHome(double[] home) {
+						setConnected(true);
+						synchronized (home_lock) { home_location = new LatLng(home[0], home[1]); }
+						uiHandler.post(homeListenerCallback); // update GUI with result
+					}
+				};
 				try
 				{
 						if (pl != null)
@@ -279,10 +290,17 @@ public class RealBoat extends Boat
 							server.addKeyValueListener(kvl, new FunctionObserver<Void>()
 							{
 								@Override
-								public void completed(Void aVoid)
-								{
-									Log.i(logTag, "add key-value listener");
-								}
+								public void completed(Void aVoid) { Log.i(logTag, "add key-value listener"); }
+
+								@Override
+								public void failed(FunctionError functionError) { }
+							});
+						}
+						if (hl != null)
+						{
+							server.addHomeListener(hl, new FunctionObserver<Void>() {
+								@Override
+								public void completed(Void aVoid) { Log.i(logTag, "add home listener"); }
 
 								@Override
 								public void failed(FunctionError functionError) { }
@@ -501,7 +519,7 @@ public class RealBoat extends Boat
 		@Override
 		public void setHome(LatLng home, final Runnable successCallback, final Runnable failureCallback)
 		{
-				home_location = home;
+				// leave this to the home listener:    synchronized (home_lock) { home_location = home; }
 				final double[] home_doubles = new double[]{home.getLatitude(), home.getLongitude()};
 				class SetHomeAsyncTask extends AsyncTask<Void, Void, Void>
 				{

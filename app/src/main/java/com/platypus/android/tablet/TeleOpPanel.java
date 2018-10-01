@@ -75,6 +75,7 @@ import com.platypus.android.tablet.Path.AreaType;
 import com.platypus.android.tablet.Path.Path;
 import com.platypus.android.tablet.Path.Region;
 import com.platypus.crw.CrwNetworkUtils;
+import com.platypus.crw.HomeListener;
 import com.platypus.crw.KeyValueListener;
 import com.platypus.crw.VehicleServer;
 import com.platypus.crw.data.SensorData;
@@ -153,7 +154,6 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 				}
 		}
 
-		// TODO: ASDF
 		public void toggleView(View v)
 		{
 			v.setVisibility( v.isShown() ? View.GONE : View.VISIBLE );
@@ -408,7 +408,8 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 								new WaypointStateReceivedRunnable(newBoat),
 								new CrumbReceivedRunnable(newBoat),
 								new RCOverrideUpdateRunnable(newBoat),
-								new KeyValueUpdateRunnable(newBoat));
+								new KeyValueUpdateRunnable(newBoat),
+								new HomeReceivedRunnable(newBoat));
 				boats_map.put(boat_name, newBoat);
 		}
 		class BoatMarkerUpdateRunnable implements Runnable
@@ -620,6 +621,62 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 						Toast.makeText(context, String.format("Unknown key-value  %s: %f", key, value), Toast.LENGTH_LONG).show();
 						break;
 				}
+			}
+		}
+
+		class HomeReceivedRunnable implements Runnable
+		{
+			Boat boat;
+			String name;
+			HomeReceivedRunnable(Boat _boat)
+			{
+				boat = _boat;
+				name = boat.getName();
+			}
+			@Override
+			public void run()
+			{
+				LatLng home = boat.getHome();
+
+				// marker view - automatically generate colored arrow
+				Drawable home_drawable = getResources().getDrawable(R.drawable.home_white, null);
+				int boat_color = boat.getBoatColor();
+
+				if (home_markers_map.containsKey(name))
+				{
+					Log.i(logTag, String.format("clearing old home for boat \"%s\"", name));
+					mMapboxMap.removeAnnotation(home_markers_map.get(name).getMarker());
+					home_markers_map.remove(name);
+				}
+
+				home_markers_map.put(name, new MarkerViewOptions()
+						.position(home)
+						.title(name + "_home")
+						.icon(colorIconFromDrawable(home_drawable, boat_color))
+						.rotation(0)
+						.anchor(0.5f, 0.5f)
+						.flat(true));
+
+				// try to add the marker until mMapboxMap exists and it is added
+				uiHandler.post(new Runnable()
+				{
+					@Override
+					public void run()
+					{
+						if (mMapboxMap != null)
+						{
+							Log.i(logTag, String.format("Adding home marker for %s", name));
+							mMapboxMap.addMarker(home_markers_map.get(name));
+							marker_types_map.put(home_markers_map.get(name).getTitle(),
+									PlatypusMarkerTypes.HOME);
+						}
+						else
+						{
+							uiHandler.postDelayed(this, 1000);
+						}
+					}
+				});
+
 			}
 		}
 
