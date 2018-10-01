@@ -6,6 +6,7 @@ import android.util.Log;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.platypus.crw.CrumbListener;
 import com.platypus.crw.FunctionObserver;
+import com.platypus.crw.KeyValueListener;
 import com.platypus.crw.PoseListener;
 import com.platypus.crw.RCOverrideListener;
 import com.platypus.crw.SensorListener;
@@ -38,6 +39,7 @@ public class RealBoat extends Boat
 		private WaypointListener wl;
 		private CrumbListener cl;
 		private RCOverrideListener rcol;
+		private KeyValueListener kvl;
 		private final int CONNECTION_POLL_S = 1;
 		private final int WAYPOINTS_INDEX_POLL_S = 1;
 
@@ -107,7 +109,8 @@ public class RealBoat extends Boat
 		                            final Runnable sensorListenerCallback,
 		                            final Runnable waypointListenerCallback,
 		                            final Runnable crumbListenerCallback,
-		                            final Runnable rcOverrideListenerCallback)
+		                            final Runnable rcOverrideListenerCallback,
+									final Runnable keyValueListenerCallback)
 		{
 				pl = new PoseListener()
 				{
@@ -202,6 +205,15 @@ public class RealBoat extends Boat
 								uiHandler.post(rcOverrideListenerCallback); // update GUI with result
 						}
 				};
+				kvl = new KeyValueListener() {
+					@Override
+					public void keyValueUpdate(String s, float v) {
+						setConnected(true);
+						key_value_map.put(s, v);
+						setLastKeyValue(s, v);
+						uiHandler.post(keyValueListenerCallback); // update GUI with result
+					}
+				};
 				try
 				{
 						if (pl != null)
@@ -261,6 +273,20 @@ public class RealBoat extends Boat
 										@Override
 										public void failed(FunctionError functionError) { }
 								});
+						}
+						if (kvl != null)
+						{
+							server.addKeyValueListener(kvl, new FunctionObserver<Void>()
+							{
+								@Override
+								public void completed(Void aVoid)
+								{
+									Log.i(logTag, "add key-value listener");
+								}
+
+								@Override
+								public void failed(FunctionError functionError) { }
+							});
 						}
 				}
 				catch (Exception e)
@@ -533,6 +559,60 @@ public class RealBoat extends Boat
 						}
 				}
 				new GoHomeAsyncTask().execute();
+		}
+
+		@Override
+		public void setKeyValue(final String key, final float v, final Runnable failureCallback)
+		{
+			class SetKeyValueAsync extends AsyncTask<Void, Void, Void>
+			{
+
+				@Override
+				protected Void doInBackground(Void... voids)
+				{
+					server.setKeyValue(key, v, new FunctionObserver<Void>()
+					{
+						@Override
+						public void completed(Void aVoid) {
+							Log.i(logTag, String.format("set key-value %s: %.2f", key, v));
+						}
+
+						@Override
+						public void failed(FunctionError functionError) {
+							Log.w(logTag, "set key-value failed");
+							uiHandler.post(failureCallback);
+						}
+					});
+					return null;
+				}
+			}
+			new SetKeyValueAsync().execute();
+		}
+
+		@Override
+		public void getKeyValue(final String key, final Runnable failureCallback)
+		{
+			class GetKeyValueAsync extends AsyncTask<Void, Void, Void>
+			{
+
+				@Override
+				protected Void doInBackground(Void... voids) {
+					server.getKeyValue(key, new FunctionObserver<Void>() {
+						@Override
+						public void completed(Void aVoid) {
+							Log.i(logTag, String.format("get key-value: %s", key));
+						}
+
+						@Override
+						public void failed(FunctionError functionError) {
+							Log.w(logTag, "get key-value failed");
+							uiHandler.post(failureCallback);
+						}
+					});
+					return null;
+				}
+			}
+			new GetKeyValueAsync().execute();
 		}
 
 		@Override
