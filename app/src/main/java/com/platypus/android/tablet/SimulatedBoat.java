@@ -42,7 +42,7 @@ public class SimulatedBoat extends Boat
 		Runnable _rcOverrideListenerCallback = null;
 		Runnable _keyValueListenerCallback = null;
 		Runnable _homeListenerCallback = null;
-		final double NEW_CRUMB_DISTANCE = 10; // meters
+		final double MAX_NEIGHBOR_DISTANCE = 10; // meters
 		boolean executing_failsafe = false;
 		double[][] _waypoints = new double[0][0];
 		final Object waypoints_lock = new Object();
@@ -52,8 +52,8 @@ public class SimulatedBoat extends Boat
 		final int DYNAMICS_POLL_MS = 200;
 		UTM original_utm;
 		double original_easting, original_northing;
-		final double max_forward_thrust_per_motor = 25; // N
-		final double max_backward_thrust_per_motor = 10; // N
+		final double max_forward_thrust_per_motor = 50; // N
+		final double max_backward_thrust_per_motor = 20; // N
 		final double moment_arm = 0.3556; // distance between the motors [m]
 		AtomicInteger last_wp_index = new AtomicInteger(-2);
 		FirstOrderIntegrator rk4 = new ClassicalRungeKuttaIntegrator(0.05);
@@ -406,10 +406,12 @@ public class SimulatedBoat extends Boat
 						{
 								double dx_to_last_crumb = q[0] - (new_crumb_UTM.eastingValue(SI.METER) - original_easting);
 								double dy_to_last_crumb = q[1] - (new_crumb_UTM.northingValue(SI.METER) - original_northing);
-								if (Math.pow(dx_to_last_crumb, 2.) + Math.pow(dy_to_last_crumb, 2.) >= Math.pow(NEW_CRUMB_DISTANCE, 2.))
+								if ((Math.pow(dx_to_last_crumb, 2.) + Math.pow(dy_to_last_crumb, 2.)) >= 0.5*Math.pow(MAX_NEIGHBOR_DISTANCE, 2.))
 								{
+									// TODO: note the coefficient of 0.5 so there should always be at least two neighbors for all but the very first and last crumbs
 										// test A* by forcing it to activate
 										updateCrumb();
+										/*
 										if (crumbs_by_index.size() > 100)
 										{
 												executing_failsafe = true;
@@ -422,6 +424,7 @@ public class SimulatedBoat extends Boat
 														}
 												}.start();
 										}
+										*/
 								}
 						}
 						else
@@ -597,9 +600,11 @@ public class SimulatedBoat extends Boat
 		@Override
 		public void goHome(final Runnable failureCallback)
 		{
-				double[] home_doubles = new double[] {home_location.getLatitude(), home_location.getLongitude()};
-				addWaypoint(home_doubles, failureCallback);
-				// TODO: switch to A* method of going home
+			executing_failsafe = true;
+				UTM goal = UTM.latLongToUtm(LatLong.valueOf(home_location.getLatitude(), home_location.getLongitude(), NonSI.DEGREE_ANGLE), ReferenceEllipsoid.WGS84);
+				UTM current = UTM.latLongToUtm(LatLong.valueOf(getLocation().getLatitude(), getLocation().getLongitude(), NonSI.DEGREE_ANGLE), ReferenceEllipsoid.WGS84);
+				Log.i(logTag, String.format("Going from start: %s to goal: %s", current.toString(), goal.toString()));
+				startPathSequence(aStar(current, goal));
 		}
 
 	@Override
@@ -617,7 +622,6 @@ public class SimulatedBoat extends Boat
 		// BREADCRUMBS STUFF
 		///////////////////////////////////////////////////////////////////////////
 
-		final double MAX_NEIGHBOR_DISTANCE = 10;
 		Map<Long, Crumb> crumbs_by_index = new HashMap<>();
 		Map<Long, Map<Long, Double>> pairwise_distances = new HashMap<>();
 		Map<Long, List<Long>> neighbors = new HashMap<>();
@@ -660,11 +664,12 @@ public class SimulatedBoat extends Boat
 								}
 
 								double pairwise_distance = distanceBetweenCrumbs(index_i, index_j);
-								// Log.v("aStar", String.format("%d -- %d pairwise distance = %.2f", index_i, index_j, pairwise_distance));
+								Log.v("aStar", String.format("%d -- %d pairwise distance = %.2f", index_i, index_j, pairwise_distance));
 								pairwise_distances.get(index_i).put(index_j, pairwise_distance);
 								pairwise_distances.get(index_j).put(index_i, pairwise_distance);
 								if (pairwise_distance <= MAX_NEIGHBOR_DISTANCE)
 								{
+									Log.v("aStar", String.format("%d -- %d are neighbors", index_i, index_j));
 										neighbors.get(index_i).add(index_j);
 										neighbors.get(index_j).add(index_i);
 								}
@@ -690,17 +695,46 @@ public class SimulatedBoat extends Boat
 				long start_index = newCrumb(start);
 				long goal_index = newCrumb(goal);
 
-				// fill in distance to goal values
-				for (Map.Entry<Long, Crumb> entry : crumbs_by_index.entrySet())
+				// TODO: force the start to be reachable -- this should be guaranteed if we use current location as the start
+
+				// make sure goal is reachable (i.e. it has at least one neighbor, otherwise use crumb closest to goal as the new goal
+				boolean goal_is_unreachable;
+				do
 				{
-						entry.getValue().setH(distanceBetweenCrumbs(entry.getKey(), goal_index));
-				}
+					Log.i("aStar", String.format("start_index = %d, goal_index = %d", start_index, goal_index));
+					goal_is_unreachable = neighbors.get(goal_index).isEmpty();
+					if (goal_is_unreachable) Log.w("aStar", "Goal is unreachable, using closest crumb as new goal");
 
-				// make sure start is reachable (i.e. it has at least one neighbor)
-				// TODO: force the start to be reachable
+					// fill in distance to goal values
+					double min_dist_to_goal = 99999999;
+					long new_goal_index = -1;
+					for (Map.Entry<Long, Crumb> entry : crumbs_by_index.entrySet())
+					{
+						double dist_to_goal = distanceBetweenCrumbs(entry.getKey(), goal_index);
+						entry.getValue().setH(dist_to_goal);
+						if (goal_is_unreachable && entry.getKey() != goal_index)
+						{
+							if (dist_to_goal < min_dist_to_goal)
+							{
+								min_dist_to_goal = dist_to_goal;
+								new_goal_index = entry.getKey();
+							}
+						}
+						/*
+						// verbose level print all info about all crumbs
+						String crumb_info = String.format("crumb #%d, neighbors:[", entry.getKey());
+						for (long neighbor : neighbors.get(entry.getKey()))
+						{
+							crumb_info += String.format("%d, ", neighbor);
+						}
+						crumb_info += "]";
+						Log.v("aStar", crumb_info);
+						*/
+					}
+					if (goal_is_unreachable) goal_index = new_goal_index;
+				} while (goal_is_unreachable);
 
-				// make sure goal is reachable (i.e. it has at least one neighbor)
-				// TODO: force the goal to be reachable
+
 
 				HashMap<Long, Void> open_crumbs = new HashMap<>();
 				HashMap<Long, Double> open_costs = new HashMap<>();
