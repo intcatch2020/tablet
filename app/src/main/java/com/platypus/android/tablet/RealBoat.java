@@ -1,5 +1,6 @@
 package com.platypus.android.tablet;
 
+import android.graphics.Point;
 import android.os.AsyncTask;
 import android.util.Log;
 
@@ -8,6 +9,7 @@ import com.platypus.crw.CrumbListener;
 import com.platypus.crw.FunctionObserver;
 import com.platypus.crw.HomeListener;
 import com.platypus.crw.KeyValueListener;
+import com.platypus.crw.PointsOfInterestListener;
 import com.platypus.crw.PoseListener;
 import com.platypus.crw.RCOverrideListener;
 import com.platypus.crw.SensorListener;
@@ -42,6 +44,7 @@ public class RealBoat extends Boat
 		private RCOverrideListener rcol;
 		private KeyValueListener kvl;
 		private HomeListener hl;
+		private PointsOfInterestListener poil;
 		private final int CONNECTION_POLL_S = 1;
 		private final int WAYPOINTS_INDEX_POLL_S = 1;
 
@@ -113,7 +116,8 @@ public class RealBoat extends Boat
 		                            final Runnable crumbListenerCallback,
 		                            final Runnable rcOverrideListenerCallback,
 									final Runnable keyValueListenerCallback,
-									final Runnable homeListenerCallback)
+									final Runnable homeListenerCallback,
+									final Runnable poiListenerCallback)
 		{
 				pl = new PoseListener()
 				{
@@ -195,6 +199,7 @@ public class RealBoat extends Boat
 								else
 								{
 										Log.d(logTag, "Received a previously known crumb, ignoring...");
+										server.acknowledgeCrumb(index, null);
 								}
 						}
 				};
@@ -223,6 +228,28 @@ public class RealBoat extends Boat
 						setConnected(true);
 						synchronized (home_lock) { home_location = new LatLng(home[0], home[1]); }
 						uiHandler.post(homeListenerCallback); // update GUI with result
+					}
+				};
+				poil = new PointsOfInterestListener() {
+					@Override
+					public void receivedPOI(double[] location, long index, String desc, int type) {
+						setConnected(true);
+						synchronized (poi_lock)
+						{
+							if (!poi_map.containsKey(index))
+							{
+								PointOfInterest poi = new PointOfInterest(index, location, VehicleServer.MapMarkerTypes.values()[type], desc);
+								poi_map.put(index, poi);
+								new_POI = poi;
+								uiHandler.post(poiListenerCallback);
+								server.acknowledgePOI(index, null);
+							}
+							else
+							{
+								Log.d(logTag, "Received a previously known POI, ignoring...");
+								server.acknowledgePOI(index, null);
+							}
+						}
 					}
 				};
 				try
@@ -301,6 +328,16 @@ public class RealBoat extends Boat
 							server.addHomeListener(hl, new FunctionObserver<Void>() {
 								@Override
 								public void completed(Void aVoid) { Log.i(logTag, "add home listener"); }
+
+								@Override
+								public void failed(FunctionError functionError) { }
+							});
+						}
+						if (poil != null)
+						{
+							server.addPOIListener(poil, new FunctionObserver<Void>() {
+								@Override
+								public void completed(Void aVoid) { Log.i(logTag, "add POI listener"); }
 
 								@Override
 								public void failed(FunctionError functionError) { }

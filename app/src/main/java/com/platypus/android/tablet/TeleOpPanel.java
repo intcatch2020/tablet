@@ -121,11 +121,12 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 		HashMap<String, Integer> current_wp_index_map = new HashMap<>();
 		HashMap<String, Integer> old_wp_index_map = new HashMap<>();
 		HashMap<String, ArrayList<Marker>> crumb_markers_map = new HashMap<>();
+		HashMap<String, ArrayList<Marker>> poi_markers_map = new HashMap<>();
 
 		// TODO: key: boat name, value: {key: sensor's (channel, type) hash, value: Mapbox marker objects}
 		HashMap<String, HashMap<Integer, ArrayList<Marker>>> sensordata_markers_map = new HashMap<>();
 
-		HashMap<String, PlatypusMarkerTypes> marker_types_map = new HashMap<>();
+		HashMap<String, VehicleServer.MapMarkerTypes> marker_types_map = new HashMap<>();
 
 		// TODO: if I'm using a recycler view for the APM GUI, that has a List of views
 		// TODO: Doesn't this key: id, value: APM hashmap have to align with that list?
@@ -384,7 +385,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 										Log.i(logTag, String.format("Adding boat marker for %s", boat_name));
 										mMapboxMap.addMarker(boat_markers_map.get(boat_name));
 										marker_types_map.put(boat_markers_map.get(boat_name).getTitle(),
-														PlatypusMarkerTypes.VEHICLE);
+														VehicleServer.MapMarkerTypes.VEHICLE);
 								}
 								else
 								{
@@ -409,7 +410,8 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 								new CrumbReceivedRunnable(newBoat),
 								new RCOverrideUpdateRunnable(newBoat),
 								new KeyValueUpdateRunnable(newBoat),
-								new HomeReceivedRunnable(newBoat));
+								new HomeReceivedRunnable(newBoat),
+								new POIReceivedRunnable(newBoat));
 				boats_map.put(boat_name, newBoat);
 		}
 		class BoatMarkerUpdateRunnable implements Runnable
@@ -540,7 +542,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 						int size = crumb_markers_map.get(name).size();
 						String title = "crumb_" + Integer.toString(size);
 						crumb_markers_map.get(name).add(mMapboxMap.addMarker(new MarkerOptions().position(crumb).icon(icon).title(title)));
-						marker_types_map.put(title, PlatypusMarkerTypes.BREADCRUMB);
+						marker_types_map.put(title, VehicleServer.MapMarkerTypes.BREADCRUMB);
 				}
 		}
 
@@ -668,7 +670,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 							Log.i(logTag, String.format("Adding home marker for %s", name));
 							mMapboxMap.addMarker(home_markers_map.get(name));
 							marker_types_map.put(home_markers_map.get(name).getTitle(),
-									PlatypusMarkerTypes.HOME);
+									VehicleServer.MapMarkerTypes.HOME);
 						}
 						else
 						{
@@ -678,6 +680,39 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 				});
 
 			}
+		}
+
+		class POIReceivedRunnable implements Runnable
+		{
+			Boat boat;
+			String name;
+			PointOfInterest poi;
+			Icon icon;
+			POIReceivedRunnable(Boat _boat)
+			{
+				boat = _boat;
+				name = boat.getName();
+				poi_markers_map.put(name, new ArrayList<Marker>());
+				// TODO: need to know which icon to use. But this runs when a boat is created.
+				// TODO:    but the icon type needs to change later. So I'm guessing the icon
+				// TODO:    needs to be set in run() rather than in the constructor here
+				/*icon = colorIconFromDrawable(
+						getResources().getDrawable(R.drawable.breadcrumb_pin, null),
+						_boat.getBoatColor());
+						*/
+			}
+
+			public void run()
+			{
+				poi = boat.getNewPOI();
+				int size = poi_markers_map.get(name).size();
+				double[] location = poi.location;
+				// TODO: set icon here
+				String title = "POI_" + Integer.toString(size); // TODO: set title based on MarkerType rather than generic "POI"
+				// TODO: create new marker
+				// TODO: also add marker to marker types map
+			}
+
 		}
 
 		class TabletLocationMarkerRunnable implements Runnable
@@ -743,7 +778,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 				waypoint_list.add(point);
 				String title = "waypoint_" + Integer.toString(marker_list.size());
 				marker_list.add(mMapboxMap.addMarker(new MarkerOptions().position(point).title(title)));
-				marker_types_map.put(title, PlatypusMarkerTypes.WAYPOINT);
+				marker_types_map.put(title, VehicleServer.MapMarkerTypes.WAYPOINT);
 				Log.v(logTag, String.format("waypoint_list.size() = %d,   marker_list.size() = %d", waypoint_list.size(), marker_list.size()));
 		}
 		void addWaypointMarkers(ArrayList<LatLng> points)
@@ -954,7 +989,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 										{
 												String title = marker.getTitle();
 												// TODO: display different information based on marker type
-												if (marker_types_map.get(title) == PlatypusMarkerTypes.WAYPOINT)
+												if (marker_types_map.get(title) == VehicleServer.MapMarkerTypes.WAYPOINT)
 												{
 														View view = getLayoutInflater().inflate(R.layout.waypoint_info_window, null);
 														TextView waypoint_index_textview = (TextView) view.findViewById(R.id.waypoint_index_textview);
@@ -2218,7 +2253,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 																				Log.i(logTag, String.format("Adding home marker for %s", boat_name));
 																				mMapboxMap.addMarker(home_markers_map.get(boat_name));
 																				marker_types_map.put(home_markers_map.get(boat_name).getTitle(),
-																								PlatypusMarkerTypes.HOME);
+																								VehicleServer.MapMarkerTypes.HOME);
 																		}
 																		else
 																		{
@@ -2558,7 +2593,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 								switch (vehicle_speed)
 								{
 										case "SLOW":
-												tPID[0] = 0.07;
+												tPID[0] = 0.1;
 												tPID[1] = 0.0;
 												tPID[2] = 0.0;
 												rPID[0] = 0.45;
@@ -2567,12 +2602,12 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 												break;
 
 										case "MEDIUM":
-												tPID[0] = 0.2;
+												tPID[0] = 0.25;
 												tPID[1] = 0.0;
 												tPID[2] = 0.0;
-												rPID[0] = 0.8;
+												rPID[0] = 0.7;
 												rPID[1] = 0.0;
-												rPID[2] = 0.8;
+												rPID[2] = 0.9;
 												break;
 
 										case "FAST":
@@ -2611,7 +2646,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 												break;
 
 										case "MEDIUM":
-												tPID[0] = 0.5;
+												tPID[0] = 0.4;
 												tPID[1] = 0.0;
 												tPID[2] = 0.0;
 												rPID[0] = 0.75;
@@ -2620,7 +2655,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 												break;
 
 										case "FAST":
-												tPID[0] = 0.8;
+												tPID[0] = 0.7;
 												tPID[1] = 0;
 												tPID[2] = 0;
 												rPID[0] = 0.7;

@@ -68,12 +68,12 @@ public class SettingsActivity extends PreferenceActivity implements SharedPrefer
                 String vehicle_type = sharedPref.getString(KEY_PREF_VEHICLE_TYPE, "PROP");
                 switch (vehicle_type) {
                     case "PROP":
-                        editor.putString(KEY_PREF_PID_THRUST_P, Double.toString(0.2));
+                        editor.putString(KEY_PREF_PID_THRUST_P, Double.toString(0.5));
                         editor.putString(KEY_PREF_PID_THRUST_I, Double.toString(0.0));
                         editor.putString(KEY_PREF_PID_THRUST_D, Double.toString(0.0));
-                        editor.putString(KEY_PREF_PID_RUDDER_P, Double.toString(1.0));
+                        editor.putString(KEY_PREF_PID_RUDDER_P, Double.toString(0.7));
                         editor.putString(KEY_PREF_PID_RUDDER_I, Double.toString(0.0));
-                        editor.putString(KEY_PREF_PID_RUDDER_D, Double.toString(0.2));
+                        editor.putString(KEY_PREF_PID_RUDDER_D, Double.toString(0.9));
                         editor.putString(KEY_PREF_THRUST_MIN, Double.toString(-1.0));
                         editor.putString(KEY_PREF_THRUST_MAX, Double.toString(0.3));
                         editor.putString(KEY_PREF_RUDDER_MIN,Double.toString(-1.0));

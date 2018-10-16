@@ -52,7 +52,10 @@ public abstract class Boat
 		LatLng new_crumb_LatLng = null;
 		UTM new_crumb_UTM = null;
 		HashMap<Long, double[]> crumb_map= new HashMap<>();
+		HashMap<Long, PointOfInterest> poi_map = new HashMap<>();
+		PointOfInterest new_POI = null;
 		final Object crumb_lock = new Object();
+		final Object poi_lock = new Object();
 		double currentYaw = 0.0; // [-pi, pi]
 		final Object yaw_lock = new Object();
 		double[][] PID_gains = {{0., 0., 0.}, {0., 0., 0.}}; // thrust, heading
@@ -77,7 +80,8 @@ public abstract class Boat
 						final Runnable crumbListenerCallback,
 						final Runnable rcOverrideListenerCallback,
 						final Runnable keyValueListenerCallback,
-						final Runnable homeListenerCallback);
+						final Runnable homeListenerCallback,
+						final Runnable poiListenerCallback);
 		abstract public void startWaypoints(final double[][] waypoints, final Runnable failureCallback);
 		abstract public void stopWaypoints(final Runnable failureCallback);
 		abstract public void updateControlSignals(final double thrust, final double heading, final Runnable failureCallback);
@@ -210,6 +214,14 @@ public abstract class Boat
 				{
 						return new_crumb_LatLng;
 				}
+		}
+
+		PointOfInterest getNewPOI()
+		{
+			synchronized (poi_lock)
+			{
+				return new_POI;
+			}
 		}
 
 		Pair<String, Float> getLastKeyValue()
