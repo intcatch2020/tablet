@@ -38,6 +38,7 @@ import com.mapbox.mapboxsdk.annotations.IconFactory;
 import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
+import com.mapbox.mapboxsdk.storage.Resource;
 
 import android.app.AlertDialog;
 import android.app.NotificationManager;
@@ -70,13 +71,11 @@ import android.support.v4.content.ContextCompat;
 import android.view.MenuItem;
 import android.view.View;
 
-import com.mapbox.mapboxsdk.storage.Resource;
+
 import com.platypus.android.tablet.Path.AreaType;
 import com.platypus.android.tablet.Path.Path;
 import com.platypus.android.tablet.Path.Region;
 import com.platypus.crw.CrwNetworkUtils;
-import com.platypus.crw.HomeListener;
-import com.platypus.crw.KeyValueListener;
 import com.platypus.crw.VehicleServer;
 import com.platypus.crw.data.SensorData;
 
@@ -693,13 +692,6 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 				boat = _boat;
 				name = boat.getName();
 				poi_markers_map.put(name, new ArrayList<Marker>());
-				// TODO: need to know which icon to use. But this runs when a boat is created.
-				// TODO:    but the icon type needs to change later. So I'm guessing the icon
-				// TODO:    needs to be set in run() rather than in the constructor here
-				/*icon = colorIconFromDrawable(
-						getResources().getDrawable(R.drawable.breadcrumb_pin, null),
-						_boat.getBoatColor());
-						*/
 			}
 
 			public void run()
@@ -707,10 +699,30 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 				poi = boat.getNewPOI();
 				int size = poi_markers_map.get(name).size();
 				double[] location = poi.location;
-				// TODO: set icon here
-				String title = "POI_" + Integer.toString(size); // TODO: set title based on MarkerType rather than generic "POI"
-				// TODO: create new marker
-				// TODO: also add marker to marker types map
+				VehicleServer.MapMarkerTypes type = poi.type;
+				String description = poi.desc;
+				String title = "POI";
+				// TODO: set icon here using the poi type
+				switch (type)
+				{
+					// TODO: set marker title using the poi type
+					case INTERESTING:
+						icon = colorIconFromDrawable(getResources().getDrawable(R.drawable.point_of_interest, null), boat.getLineColor());
+						title = "POI: " + description;
+						break;
+
+					case HOMEPATH:
+						icon = colorIconFromDrawable(getResources().getDrawable(R.drawable.going_home_wp, null), boat.getLineColor());
+						title = String.format("Going home WP %d", size);
+						// TODO: maybe split different types of POI into a nested map of type Map<MapMarkerTypes, Map<String, ArrayList<Marker>>>
+						break;
+
+					default:
+						break;
+				}
+				// create new marker and add marker to marker types map
+				poi_markers_map.get(name).add(mMapboxMap.addMarker(new MarkerOptions().position(new LatLng(location[0], location[1])).icon(icon).title(title)));
+				marker_types_map.put(title, type);
 			}
 
 		}
@@ -989,14 +1001,17 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 										{
 												String title = marker.getTitle();
 												// TODO: display different information based on marker type
-												if (marker_types_map.get(title) == VehicleServer.MapMarkerTypes.WAYPOINT)
+												View view = null;
+												switch (marker_types_map.get(title))
 												{
-														View view = getLayoutInflater().inflate(R.layout.waypoint_info_window, null);
+													case WAYPOINT:
+													{
+														view = getLayoutInflater().inflate(R.layout.waypoint_info_window, null);
 														TextView waypoint_index_textview = (TextView) view.findViewById(R.id.waypoint_index_textview);
 														TextView waypoint_latlng_textview = (TextView) view.findViewById(R.id.waypoint_latlong_textview);
 														waypoint_latlng_textview.setText(String.format("%s, %s",
-																		marker.getPosition().getLatitude(),
-																		marker.getPosition().getLongitude()));
+																marker.getPosition().getLatitude(),
+																marker.getPosition().getLongitude()));
 
 														// parse waypoint title to get its index
 														String[] title_parts = title.split("_");
@@ -1004,34 +1019,40 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 														final Button move_button = (Button) view.findViewById(R.id.waypoint_move_button);
 														move_button.setOnClickListener(new OnClickListener()
 														{
-																@Override
-																public void onClick(View v)
+															@Override
+															public void onClick(View v)
+															{
+																mLogWriter.println(System.currentTimeMillis() - mLogStartTime + "\t" + "button" + "\t" + "waypoint_move");
+																// next map click sets the marker's location and resets the map click listener to null
+																mMapboxMap.setOnMapClickListener(new MapboxMap.OnMapClickListener()
 																{
-																		mLogWriter.println(System.currentTimeMillis() - mLogStartTime + "\t" + "button" + "\t" + "waypoint_move");
-																		// next map click sets the marker's location and resets the map click listener to null
+																	@Override
+																	public void onMapClick(@NonNull LatLng point)
+																	{
+																		marker.setPosition(point);
+																		waypoint_list.set(waypoint_index, point);
 																		mMapboxMap.setOnMapClickListener(new MapboxMap.OnMapClickListener()
 																		{
-																				@Override
-																				public void onMapClick(@NonNull LatLng point)
-																				{
-																						marker.setPosition(point);
-																						waypoint_list.set(waypoint_index, point);
-																						mMapboxMap.setOnMapClickListener(new MapboxMap.OnMapClickListener()
-																						{
-																								@Override
-																								public void onMapClick(@NonNull LatLng point) { }
-																						});
-																				}
+																			@Override
+																			public void onMapClick(@NonNull LatLng point) { }
 																		});
-																}
+																	}
+																});
+															}
 														});
 														waypoint_index_textview.setText(marker.getTitle());
-														return view;
+														break;
+													}
+													case BREADCRUMB:
+													{
+														// do nothing - there should not be any info window for breadcrumbs
+														break;
+													}
+													// TODO: cases for the other marker types
+													default:
+														break;
 												}
-												else
-												{
-														return null;
-												}
+												return view;
 										}
 								});
 								mMapboxMap.setOnMarkerClickListener(new MapboxMap.OnMarkerClickListener()
@@ -1039,7 +1060,23 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 										@Override
 										public boolean onMarkerClick(@NonNull Marker marker)
 										{
-												return false;
+											String title = marker.getTitle();
+											boolean return_value = false;
+											switch (marker_types_map.get(title))
+											{
+												case WAYPOINT:
+													return_value = false;
+													break;
+
+												case BREADCRUMB:
+													return_value = true;
+													marker.hideInfoWindow();
+													break;
+
+												default:
+													break;
+											}
+											return return_value;
 										}
 								});
 								mMapboxMap.setOnMapLongClickListener(new MapboxMap.OnMapLongClickListener()

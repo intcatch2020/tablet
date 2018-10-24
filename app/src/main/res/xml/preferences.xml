@@ -157,4 +157,25 @@
 
     </PreferenceCategory>
 
+    <!--
+    <PreferenceCategory
+        android:key="pref_global_station_keeping"
+        android:title="Station keeping control">
+        <EditTextPreference
+            android:key="pref_global_station_keep_time"
+            android:summary=""
+            android:title="Milliseconds the boat will wait at each waypoint"
+            />
+
+        <com.platypus.android.tablet.PreferenceWithButton
+            android:key="pref_experiment"
+            android:title="whatever"
+            android:summary=""
+            android:layout="@layout/station_keeping_preference_layout"
+            >
+        </com.platypus.android.tablet.PreferenceWithButton>
+
+    </PreferenceCategory>
+    -->
+
 </PreferenceScreen>

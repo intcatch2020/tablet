@@ -58,6 +58,7 @@ public class SettingsActivity extends PreferenceActivity implements SharedPrefer
         addPreferencesFromResource(R.xml.preferences);
 
         ListView v = getListView();
+
         Button restore_defaults_button = new Button(this);
         restore_defaults_button.setText("Restore defaults  (long press)");
         restore_defaults_button.setOnLongClickListener(new View.OnLongClickListener() {
