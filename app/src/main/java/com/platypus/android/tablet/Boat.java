@@ -191,7 +191,11 @@ public abstract class Boat
 		{
 				synchronized (location_lock)
 				{
+					if (currentLocation != null)
+					{
 						return operator_location.distanceTo(currentLocation);
+					}
+					return -1;
 				}
 		}
 

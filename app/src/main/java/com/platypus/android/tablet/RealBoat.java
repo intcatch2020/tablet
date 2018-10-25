@@ -238,6 +238,7 @@ public class RealBoat extends Boat
 						{
 							if (!poi_map.containsKey(index))
 							{
+								Log.i(logTag, String.format("Received new POI #%d", index));
 								PointOfInterest poi = new PointOfInterest(index, location, VehicleServer.MapMarkerTypes.values()[type], desc);
 								poi_map.put(index, poi);
 								new_POI = poi;
@@ -261,11 +262,14 @@ public class RealBoat extends Boat
 										@Override
 										public void completed(Void aVoid)
 										{
-												Log.i(logTag, "addPoseListener");
+												Log.i(logTag, "added pose listener");
 										}
 
 										@Override
-										public void failed(FunctionError functionError) { }
+										public void failed(FunctionError functionError)
+										{
+											Log.w(logTag, "Failed to add pose listener");
+										}
 								});
 						}
 						if (sl != null)
@@ -273,10 +277,13 @@ public class RealBoat extends Boat
 								server.addSensorListener(sl, new FunctionObserver<Void>()
 								{
 										@Override
-										public void completed(Void aVoid) { Log.i(logTag, "add sensor listener"); }
+										public void completed(Void aVoid) { Log.i(logTag, "added sensor listener"); }
 
 										@Override
-										public void failed(FunctionError functionError) { }
+										public void failed(FunctionError functionError)
+										{
+											Log.w(logTag, "Failed to add sensor listener");
+										}
 								});
 						}
 						if (wl != null)
@@ -284,10 +291,13 @@ public class RealBoat extends Boat
 								server.addWaypointListener(wl, new FunctionObserver<Void>()
 								{
 										@Override
-										public void completed(Void aVoid) { Log.i(logTag, "add waypoint listener"); }
+										public void completed(Void aVoid) { Log.i(logTag, "added waypoint listener"); }
 
 										@Override
-										public void failed(FunctionError functionError) { }
+										public void failed(FunctionError functionError)
+										{
+											Log.w(logTag, "Failed to add waypoint listener");
+										}
 								});
 						}
 						if (cl != null)
@@ -295,10 +305,13 @@ public class RealBoat extends Boat
 								server.addCrumbListener(cl, new FunctionObserver<Void>()
 								{
 										@Override
-										public void completed(Void aVoid) { Log.i(logTag, "add crumb listener"); }
+										public void completed(Void aVoid) { Log.i(logTag, "added crumb listener"); }
 
 										@Override
-										public void failed(FunctionError functionError) { }
+										public void failed(FunctionError functionError)
+										{
+											Log.w(logTag, "Failed to add crumb listener");
+										}
 								});
 						}
 						if (rcol != null)
@@ -306,10 +319,13 @@ public class RealBoat extends Boat
 								server.addRCOverrideListener(rcol, new FunctionObserver<Void>()
 								{
 										@Override
-										public void completed(Void aVoid) { Log.i(logTag, "add rc override listener"); }
+										public void completed(Void aVoid) { Log.i(logTag, "added rc override listener"); }
 
 										@Override
-										public void failed(FunctionError functionError) { }
+										public void failed(FunctionError functionError)
+										{
+											Log.w(logTag, "Failed to add rc override listener");
+										}
 								});
 						}
 						if (kvl != null)
@@ -317,36 +333,45 @@ public class RealBoat extends Boat
 							server.addKeyValueListener(kvl, new FunctionObserver<Void>()
 							{
 								@Override
-								public void completed(Void aVoid) { Log.i(logTag, "add key-value listener"); }
+								public void completed(Void aVoid) { Log.i(logTag, "added key-value listener"); }
 
 								@Override
-								public void failed(FunctionError functionError) { }
+								public void failed(FunctionError functionError)
+								{
+									Log.w(logTag, "Failed to add key-value listener");
+								}
 							});
 						}
 						if (hl != null)
 						{
 							server.addHomeListener(hl, new FunctionObserver<Void>() {
 								@Override
-								public void completed(Void aVoid) { Log.i(logTag, "add home listener"); }
+								public void completed(Void aVoid) { Log.i(logTag, "added home listener"); }
 
 								@Override
-								public void failed(FunctionError functionError) { }
+								public void failed(FunctionError functionError)
+								{
+									Log.w(logTag, "Failed to add home listener");
+								}
 							});
 						}
 						if (poil != null)
 						{
 							server.addPOIListener(poil, new FunctionObserver<Void>() {
 								@Override
-								public void completed(Void aVoid) { Log.i(logTag, "add POI listener"); }
+								public void completed(Void aVoid) { Log.i(logTag, "added POI listener"); }
 
 								@Override
-								public void failed(FunctionError functionError) { }
+								public void failed(FunctionError functionError)
+								{
+									Log.w(logTag, "Failed to add POI listener");
+								}
 							});
 						}
 				}
 				catch (Exception e)
 				{
-						Log.i(logTag, "Failed to add listener");
+						Log.e(logTag, String.format("Failed to add listener with error: %s", e.getMessage()));
 				}
 				polling_thread_pool = new ScheduledThreadPoolExecutor(2);
 				polling_thread_pool.scheduleAtFixedRate(

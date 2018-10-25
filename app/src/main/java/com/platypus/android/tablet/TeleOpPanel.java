@@ -527,7 +527,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 				Icon icon;
 				CrumbReceivedRunnable(Boat _boat)
 				{
-						Log.i("ODE", "CrumbReceivedRunnable constructor");
+						Log.v(logTag, "CrumbReceivedRunnable constructor");
 						boat = _boat;
 						name = boat.getName();
 						crumb_markers_map.put(name, new ArrayList<Marker>());
@@ -720,6 +720,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 					default:
 						break;
 				}
+				Log.i(logTag, String.format("Received POI: %s", title));
 				// create new marker and add marker to marker types map
 				poi_markers_map.get(name).add(mMapboxMap.addMarker(new MarkerOptions().position(new LatLng(location[0], location[1])).icon(icon).title(title)));
 				marker_types_map.put(title, type);
