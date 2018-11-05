@@ -121,6 +121,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 		HashMap<String, Integer> old_wp_index_map = new HashMap<>();
 		HashMap<String, ArrayList<Marker>> crumb_markers_map = new HashMap<>();
 		HashMap<String, ArrayList<Marker>> poi_markers_map = new HashMap<>();
+		HashMap<String, Marker> toggled_markers_map = new HashMap<>();
 
 		// TODO: key: boat name, value: {key: sensor's (channel, type) hash, value: Mapbox marker objects}
 		HashMap<String, HashMap<Integer, ArrayList<Marker>>> sensordata_markers_map = new HashMap<>();
@@ -289,6 +290,8 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 		MarkerViewOptions tablet_location_markerviewoptions = null;
 		double distance_to_current_boat;
 		AtomicBoolean current_boat_is_connected = new AtomicBoolean(false);
+
+		AtomicBoolean display_breadcrumbs = new AtomicBoolean(true);
 
 		int boat_color_count = 0;
 		Map<Integer, Map<String, Integer>> color_map = new HashMap<>();
@@ -539,9 +542,21 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 				{
 						crumb = boat.getNewCrumb();
 						int size = crumb_markers_map.get(name).size();
-						String title = "crumb_" + Integer.toString(size);
-						crumb_markers_map.get(name).add(mMapboxMap.addMarker(new MarkerOptions().position(crumb).icon(icon).title(title)));
+						String title = name + "_crumb_" + Integer.toString(size);
+						// TODO: if crumbs are toggled off, push them into their temp storage instead of displaying them
 						marker_types_map.put(title, VehicleServer.MapMarkerTypes.BREADCRUMB);
+						MarkerOptions marker_options = new MarkerOptions().position(crumb).icon(icon).title(title);
+						Marker marker;
+						if (display_breadcrumbs.get())
+						{
+							marker = mMapboxMap.addMarker(marker_options);
+						}
+						else
+						{
+							marker = marker_options.getMarker();
+						}
+						crumb_markers_map.get(name).add(marker);
+						toggled_markers_map.put(title, marker);
 				}
 		}
 
@@ -1304,6 +1319,28 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 																mLogWriter.println(System.currentTimeMillis() - mLogStartTime + "\t" + "button" + "\t" + "autonomy");
 																break;
 														}
+													case "Toggle Breadcrumbs":
+													{
+														if (display_breadcrumbs.get()) {
+															display_breadcrumbs.set(false);
+															// TODO: turn off breadcrumbs
+															for (Marker marker : toggled_markers_map.values()) {
+																mMapboxMap.removeMarker(marker);
+															}
+														}
+														else
+														{
+															display_breadcrumbs.set(true);
+															// TODO: turn on breadcrumbs
+															for (Marker marker : toggled_markers_map.values()) {
+																mMapboxMap.addMarker(new MarkerOptions()
+																		.position(marker.getPosition())
+																		.title(marker.getTitle())
+																		.icon(marker.getIcon()));
+															}
+														}
+														break;
+													}
 												}
 												return true;
 										}
