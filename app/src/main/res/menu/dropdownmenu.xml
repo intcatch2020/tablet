@@ -38,6 +38,10 @@
         android:id="@+id/toggle_breadcrumbs_button"
         android:title="Toggle Breadcrumbs"
         />
+    <item
+        android:id="@+id/clear_markers_button"
+        android:title="Clear Markers"
+        />
 
 
 

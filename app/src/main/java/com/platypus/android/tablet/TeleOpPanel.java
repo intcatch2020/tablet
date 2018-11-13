@@ -1341,6 +1341,51 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 														}
 														break;
 													}
+													case "Clear Markers":
+													{
+														// TODO: pop up window with several more buttons
+														// TODO: each button says "Clear X"
+														// TODO: with X being a different type of marker
+														// ASDF
+														final Dialog dialog = new Dialog(context);
+														dialog.setContentView(R.layout.clear_markers_layout);
+														dialog.setTitle("Select markers to clear");
+														Button clear_breadcrumbs = (Button) dialog.findViewById(R.id.clear_breadcrumb_markers_button);
+														Button clear_gohome = (Button) dialog.findViewById(R.id.clear_gohome_markers_button);
+														Button clear_poi = (Button) dialog.findViewById(R.id.clear_poi_markers_button);
+
+														clear_breadcrumbs.setOnClickListener(new OnClickListener() {
+															@Override
+															public void onClick(View view) {
+																// TODO: clear all breadcrumb markers
+                                                                dialog.dismiss();
+															}
+														});
+														clear_gohome.setOnClickListener(new OnClickListener() {
+															@Override
+															public void onClick(View view) {
+																// TODO: clear all go home waypoint markers
+																for (String boat_name : poi_markers_map.keySet()) {
+																	for (Marker m : poi_markers_map.get(boat_name)) {
+																		if (marker_types_map.get(m.getTitle()) == VehicleServer.MapMarkerTypes.HOMEPATH) {
+																			mMapboxMap.removeMarker(m);
+																		}
+																	}
+																}
+																dialog.dismiss();
+															}
+														});
+														clear_poi.setOnClickListener(new OnClickListener() {
+															@Override
+															public void onClick(View view) {
+																// TODO: clear all general POI markers
+                                                                dialog.dismiss();
+															}
+														});
+														dialog.show();
+														break;
+
+													}
 												}
 												return true;
 										}
