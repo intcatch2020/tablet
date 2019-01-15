@@ -813,6 +813,35 @@ public class RealBoat extends Boat
 		}
 
 		@Override
+		public void setSamplerSystem(final int active)
+		{
+			class SetSamplerSystemAsyncTask extends AsyncTask<Void, Void, Void>
+			{
+				@Override
+				protected Void doInBackground(Void... params)
+				{
+					double[] actve_array = {active, 1};
+					server.setGains(8, actve_array, new FunctionObserver<Void>()
+					{
+						@Override
+						public void completed(Void aVoid)
+						{
+							Log.i(logTag, "Started system done");
+						}
+
+						@Override
+						public void failed(FunctionError functionError)
+						{
+							Log.i(logTag, "Started system fail");
+						}
+					});
+					return null;
+				}
+			}
+			new SetSamplerSystemAsyncTask().execute();
+		}
+
+		@Override
 		public void stopSample(final int jar_number, final Runnable successCallback, final Runnable failureCallback)
 		{
 				class StopSampleAsyncTask extends AsyncTask<Void, Void, Void>

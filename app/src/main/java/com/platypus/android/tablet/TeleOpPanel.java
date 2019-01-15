@@ -99,6 +99,7 @@ import android.widget.PopupMenu;
 import android.widget.RadioButton;
 import android.widget.RelativeLayout;
 import android.widget.Spinner;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -206,6 +207,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 		Button jar4_button = null;
 		Button sampler_reset_button = null;
 		Button sampler_stop_all_button = null;
+        Switch switch_active_sampler = null;
 
 		TextView pump_is_on_text = null;
 		TextView hm_measurement_count_text = null;
@@ -835,7 +837,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 		protected void onCreate(final Bundle savedInstanceState)
 		{
 				super.onCreate(savedInstanceState);
-				Mapbox.getInstance(getApplicationContext(), getString(R.string.mapbox_access_token));
+				Mapbox.getInstance(getApplicationContext(), "pk.eyJ1IjoiZGNvcnNpIiwiYSI6ImNqcXdhcWFraTAwMnczeHM1bnh6ZGdmMnkifQ.Q9MlWkL7sGwfSaRwfdvqiA");
 				this.setContentView(R.layout.tabletlayoutswitch);
 				sensor_stuff = new SensorStuff(this);
 				saved_waypoint_stuff = new SavedWaypointsStuff(context);
@@ -914,6 +916,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 				jar4_button = (Button) this.findViewById(R.id.jar4_button);
 				sampler_reset_button = (Button) this.findViewById(R.id.sampler_reset_button);
 				sampler_stop_all_button = (Button) this.findViewById(R.id.sampler_stop_all_button);
+                switch_active_sampler = (Switch) this.findViewById(R.id.switch_active_sampler);
 				jar1_button.setClickable(true);
 				jar2_button.setClickable(true);
 				jar3_button.setClickable(true);
@@ -1932,6 +1935,18 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 								return false;
 						}
 				});
+
+                switch_active_sampler.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                        Toast.makeText(context, "Changed to: " + isChecked, Toast.LENGTH_SHORT).show();
+                        Boat current_boat = currentBoat();
+                        if(isChecked)
+                            //current_boat.setKeyValue("sampler_system_on", 1.0f, new ToastFailureCallback("could not activate the system"));
+                            current_boat.setSamplerSystem(1);
+                        else
+                            current_boat.setSamplerSystem(0);
+                    }
+                });
 
 				// TODO: ASDF
 				pump_start_button.setOnClickListener(new OnClickListener() {

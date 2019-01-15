@@ -569,7 +569,12 @@ public class SimulatedBoat extends Boat
 				return addr;
 		}
 
-		@Override
+	@Override
+	public void setSamplerSystem(int active) {
+
+	}
+
+	@Override
 		public void startSample(final int jar_number, final Runnable TimerStartRunnable, final Runnable failureCallback)
 		{
 

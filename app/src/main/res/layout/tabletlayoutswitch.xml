@@ -12,12 +12,12 @@
 
     <RelativeLayout
         android:id="@+id/relativeLayout_boat"
-        android:layout_width="180dp"
+        android:layout_width="214dp"
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
         android:layout_alignParentTop="true"
-        android:background="@drawable/border"
-        >
+        android:layout_marginLeft="0dp"
+        android:background="@drawable/border">
 
         <Button
             android:id="@+id/connectButton"
@@ -25,8 +25,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_alignParentTop="true"
-            android:text="Connect to boat"
-            />
+            android:layout_marginTop="0dp"
+            android:text="Connect to boat" />
 
         <TextView
             android:id="@+id/printIpAddress"
@@ -37,22 +37,21 @@
             android:layout_marginLeft="10dp"
             android:layout_marginRight="10dp"
             android:gravity="center_horizontal|center_vertical"
-            android:textColor="@color/black"/>
+            android:textColor="@color/black" />
 
         <RelativeLayout
             android:id="@+id/relativeLayout_waypoint_status"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_below="@+id/printIpAddress"
-            android:layout_marginTop="10dp"
-            >
+            android:layout_marginTop="10dp">
 
             <TextView
                 android:id="@+id/waypoint_status_label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="10dp"
-                android:text="WP status:"/>
+                android:text="WP status:" />
 
             <TextView
                 android:id="@+id/waypoint_status"
@@ -60,8 +59,7 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentRight="true"
                 android:layout_marginRight="10dp"
-                android:gravity="center"
-                />
+                android:gravity="center" />
         </RelativeLayout>
 
         <RelativeLayout
@@ -69,11 +67,10 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_below="@+id/relativeLayout_waypoint_status"
-            android:layout_marginBottom="10dp"
             android:layout_marginLeft="10dp"
-            android:layout_marginRight="10dp"
             android:layout_marginTop="10dp"
-            >
+            android:layout_marginRight="10dp"
+            android:layout_marginBottom="10dp">
 
             <TextView
                 android:id="@+id/batteryTextView"
@@ -81,15 +78,15 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentLeft="true"
                 android:layout_alignParentTop="true"
-                android:text="Battery"/>
+                android:text="Battery" />
 
             <TextView
                 android:id="@+id/batteryVoltage"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_alignParentRight="true"
                 android:layout_alignParentTop="true"
-                android:text="0.0"/>
+                android:layout_alignParentRight="true"
+                android:text="0.0" />
         </RelativeLayout>
 
         <RelativeLayout
@@ -105,7 +102,7 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentLeft="true"
                 android:layout_centerInParent="true"
-                android:text="Boat speed:"/>
+                android:text="Boat speed:" />
 
             <Spinner
                 android:id="@+id/speed_spinner"
@@ -113,8 +110,7 @@
                 android:layout_height="wrap_content"
                 android:layout_toRightOf="@id/boat_speed_label"
                 android:entries="@array/spinner_speed_entries"
-                android:prompt="@string/speed_prompt">
-            </Spinner>
+                android:prompt="@string/speed_prompt"></Spinner>
 
         </RelativeLayout>
 
@@ -124,8 +120,7 @@
             android:layout_height="wrap_content"
             android:layout_below="@id/relativeLayout_speed"
             android:layout_centerInParent="true"
-            android:layout_marginTop="10dp"
-            >
+            android:layout_marginTop="10dp">
 
             <Button
                 android:id="@+id/start_button"
@@ -134,7 +129,7 @@
                 android:layout_alignParentLeft="true"
                 android:layout_alignParentTop="true"
                 android:layout_marginLeft="12dp"
-                android:background="@drawable/play_button"/>
+                android:background="@drawable/play_button" />
 
             <Button
                 android:id="@+id/pause_button"
@@ -142,8 +137,7 @@
                 android:layout_height="40dp"
                 android:layout_marginLeft="10dp"
                 android:layout_toRightOf="@id/start_button"
-                android:background="@drawable/pause_button"
-                />
+                android:background="@drawable/pause_button" />
 
             <Button
                 android:id="@+id/stop_button"
@@ -152,8 +146,7 @@
                 android:layout_marginLeft="10dp"
                 android:layout_marginRight="10dp"
                 android:layout_toRightOf="@id/pause_button"
-                android:background="@drawable/stop_button"
-                />
+                android:background="@drawable/stop_button" />
         </RelativeLayout>
 
         <RelativeLayout
@@ -171,16 +164,14 @@
                 android:layout_alignParentLeft="true"
                 android:layout_centerInParent="true"
                 android:layout_marginLeft="10dp"
-                android:text="Selected boat:"/>
+                android:text="Selected boat:" />
 
             <Spinner
                 android:id="@+id/boat_name_spinner"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_toRightOf="@id/selected_boat_label"
-                android:background="@color/background_holo_light"
-                >
-            </Spinner>
+                android:background="@color/background_holo_light"></Spinner>
 
 
         </RelativeLayout>
@@ -188,16 +179,16 @@
     </RelativeLayout>
 
     <TextView
-        android:layout_width="match_parent"
+        android:id="@+id/show_hide_paths"
+        android:layout_width="267dp"
         android:layout_height="wrap_content"
         android:layout_below="@id/relativeLayout_boat"
         android:layout_alignRight="@id/relativeLayout_boat"
-        android:text="Paths"
-        android:textSize="20dp"
-        android:id="@+id/show_hide_paths"
+        android:layout_marginRight="3dp"
         android:clickable="true"
         android:onClick="togglePathsView"
-        />
+        android:text="Paths"
+        android:textSize="20dp" />
 
 
     <RelativeLayout
@@ -542,6 +533,7 @@
                 />
         </RelativeLayout>
 
+
         <Button
             android:id="@+id/sampler_stop_all_button"
             android:layout_width="40dp"
@@ -550,6 +542,7 @@
             android:layout_below="@id/relativeLayout_sampler_jar2"
             android:background="@drawable/stop_button"
             android:layout_marginTop="5dp"/>
+
 
         <Button
             android:id="@+id/sampler_reset_button"
@@ -561,85 +554,94 @@
             android:layout_marginTop="5dp"
             android:background="@drawable/reset"/>
 
+        <Switch
+            android:id="@+id/switch_active_sampler"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/relativeLayout_sampler_jar4"
+            android:layout_alignParentLeft="true"
+            android:layout_marginLeft="10dp"
+            android:text="System active: "/>
+
+
+
     </RelativeLayout>
 
     <RelativeLayout
         android:id="@+id/relativeLayout_map"
-        android:layout_height="wrap_content"
-        android:layout_width="fill_parent"
-        android:layout_weight="0.5"
+        android:layout_width="1063dp"
+        android:layout_height="match_parent"
+        android:layout_marginLeft="6dp"
         android:layout_toRightOf="@+id/relativeLayout_boat"
-        >
+        android:layout_weight="0.5">
 
 
+        <com.mapbox.mapboxsdk.maps.MapView
+            android:id="@+id/mapview"
+            android:layout_width="1062dp"
+            android:layout_height="match_parent"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:layout_marginStart="0dp"
+            android:layout_marginTop="0dp"
+            mapbox:mapbox_styleUrl="@string/mapbox_style_mapbox_streets"></com.mapbox.mapboxsdk.maps.MapView>
 
-            <com.mapbox.mapboxsdk.maps.MapView
-                android:id="@+id/mapview"
-                android:layout_width="fill_parent"
-                android:layout_height="match_parent"
-                android:layout_alignParentStart="true"
-                android:layout_alignParentTop="true"
-                mapbox:mapbox_styleUrl="@string/mapbox_style_mapbox_streets">
-            </com.mapbox.mapboxsdk.maps.MapView>
+        <Button
+            android:id="@+id/center_on_boat_button"
+            style="?android:attr/buttonStyleSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignLeft="@id/mapview"
+            android:layout_alignTop="@id/mapview"
+            android:text="Center on boat" />
 
-            <Button
-                style="?android:attr/buttonStyleSmall"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:id="@+id/center_on_boat_button"
-                android:text="Center on boat"
-                android:layout_alignTop="@id/mapview"
-                android:layout_alignLeft="@id/mapview"/>
+        <Button
+            android:id="@+id/center_on_operator_button"
+            style="?android:attr/buttonStyleSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/center_on_boat_button"
+            android:layout_alignLeft="@id/mapview"
+            android:layout_marginTop="15dp"
+            android:text="Center on tablet" />
 
-            <Button
-                style="?android:attr/buttonStyleSmall"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:id="@+id/center_on_operator_button"
-                android:text="Center on tablet"
-                android:layout_alignLeft="@id/mapview"
-                android:layout_below="@id/center_on_boat_button"
-                android:layout_marginTop="15dp"/>
+        <TextView
+            android:id="@+id/rc_override_warning"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignTop="@id/mapview"
+            android:layout_marginLeft="15dp"
+            android:layout_toRightOf="@id/center_on_boat_button"
+            android:text="" />
 
-            <TextView
-                android:id="@+id/rc_override_warning"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text=""
-                android:layout_alignTop="@id/mapview"
-                android:layout_toRightOf="@id/center_on_boat_button"
-                android:layout_marginLeft="15dp"/>
-
-            <Button
-                android:id="@+id/advopt"
-                style="?android:attr/buttonStyleSmall"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentTop="true"
-                android:layout_alignParentRight="true"
-                android:text="Advanced Options"
-                />
+        <Button
+            android:id="@+id/advopt"
+            style="?android:attr/buttonStyleSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentRight="true"
+            android:text="Advanced Options" />
 
         <com.platypus.android.tablet.Joystick.JoystickView
             android:id="@+id/joystickView"
             android:layout_width="200dp"
             android:layout_height="200dp"
-            android:layout_alignParentBottom="true"
             android:layout_alignParentRight="true"
-            />
+            android:layout_alignParentBottom="true" />
 
         <android.support.v7.widget.RecyclerView
             android:id="@+id/sensor_recycler_view"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
             android:layout_alignParentLeft="true"
+            android:layout_alignParentBottom="true"
             android:layout_marginLeft="125dp"
             android:layout_marginRight="75dp"
             android:layout_toLeftOf="@id/joystickView"
             android:background="@color/background_holo_light"
             android:clipToPadding="false"
-            android:scrollbars="vertical"/>
-        </RelativeLayout>
+            android:scrollbars="vertical" />
+    </RelativeLayout>
 
 </RelativeLayout>

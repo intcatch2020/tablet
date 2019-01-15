@@ -91,6 +91,7 @@ public abstract class Boat
 		abstract public void sendAutonomousPredicateMessage(String apm, final Runnable failureCallback);
 		abstract public void setAddress(InetSocketAddress a);
 		abstract public InetSocketAddress getIpAddress();
+	    abstract public void setSamplerSystem(final int active);
 		abstract public void startSample(final int jar_number, final Runnable TimerStartRunnable, final Runnable failureCallback);
 		abstract public void stopSample(final int jar_number, final Runnable successCallback, final Runnable failureCallback);
 		abstract public void stopSampleAll(final Runnable successCallback, final Runnable failureCallback);
