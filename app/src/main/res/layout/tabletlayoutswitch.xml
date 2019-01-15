@@ -9,570 +9,565 @@
     android:focusableInTouchMode="true">
     <!-- need android:focusableInTouchMode="true" here to prevent transect distance from
          immediately being focused and making the keyboard pop up -->
-
-    <RelativeLayout
-        android:id="@+id/relativeLayout_boat"
+    <ScrollView
+        android:id="@+id/scroll"
         android:layout_width="214dp"
-        android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentTop="true"
-        android:layout_marginLeft="0dp"
-        android:background="@drawable/border">
-
-        <Button
-            android:id="@+id/connectButton"
-            style="?android:attr/buttonStyleSmall"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_alignParentTop="true"
-            android:layout_marginTop="0dp"
-            android:text="Connect to boat" />
-
-        <TextView
-            android:id="@+id/printIpAddress"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/connectButton"
-            android:layout_gravity="center"
-            android:layout_marginLeft="10dp"
-            android:layout_marginRight="10dp"
-            android:gravity="center_horizontal|center_vertical"
-            android:textColor="@color/black" />
+        android:layout_height="wrap_content">
 
         <RelativeLayout
-            android:id="@+id/relativeLayout_waypoint_status"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/printIpAddress"
-            android:layout_marginTop="10dp">
-
-            <TextView
-                android:id="@+id/waypoint_status_label"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginLeft="10dp"
-                android:text="WP status:" />
-
-            <TextView
-                android:id="@+id/waypoint_status"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentRight="true"
-                android:layout_marginRight="10dp"
-                android:gravity="center" />
-        </RelativeLayout>
-
-        <RelativeLayout
-            android:id="@+id/relativeLayout_battery"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/relativeLayout_waypoint_status"
-            android:layout_marginLeft="10dp"
-            android:layout_marginTop="10dp"
-            android:layout_marginRight="10dp"
-            android:layout_marginBottom="10dp">
-
-            <TextView
-                android:id="@+id/batteryTextView"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentLeft="true"
-                android:layout_alignParentTop="true"
-                android:text="Battery" />
-
-            <TextView
-                android:id="@+id/batteryVoltage"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentTop="true"
-                android:layout_alignParentRight="true"
-                android:text="0.0" />
-        </RelativeLayout>
-
-        <RelativeLayout
-            android:id="@+id/relativeLayout_speed"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/relativeLayout_battery"
-            android:layout_marginLeft="10dp">
-
-            <TextView
-                android:id="@+id/boat_speed_label"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentLeft="true"
-                android:layout_centerInParent="true"
-                android:text="Boat speed:" />
-
-            <Spinner
-                android:id="@+id/speed_spinner"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_toRightOf="@id/boat_speed_label"
-                android:entries="@array/spinner_speed_entries"
-                android:prompt="@string/speed_prompt"></Spinner>
-
-        </RelativeLayout>
-
-        <RelativeLayout
-            android:id="@+id/relativeLayout_boat_buttons"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/relativeLayout_speed"
-            android:layout_centerInParent="true"
-            android:layout_marginTop="10dp">
-
-            <Button
-                android:id="@+id/start_button"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_alignParentLeft="true"
-                android:layout_alignParentTop="true"
-                android:layout_marginLeft="12dp"
-                android:background="@drawable/play_button" />
-
-            <Button
-                android:id="@+id/pause_button"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_marginLeft="10dp"
-                android:layout_toRightOf="@id/start_button"
-                android:background="@drawable/pause_button" />
-
-            <Button
-                android:id="@+id/stop_button"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_marginLeft="10dp"
-                android:layout_marginRight="10dp"
-                android:layout_toRightOf="@id/pause_button"
-                android:background="@drawable/stop_button" />
-        </RelativeLayout>
-
-        <RelativeLayout
-            android:id="@+id/relativeLayout_boat_select"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/relativeLayout_boat_buttons"
-            android:layout_marginTop="10dp"
-            android:layout_marginBottom="10dp">
-
-            <TextView
-                android:id="@+id/selected_boat_label"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentLeft="true"
-                android:layout_centerInParent="true"
-                android:layout_marginLeft="10dp"
-                android:text="Selected boat:" />
-
-            <Spinner
-                android:id="@+id/boat_name_spinner"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_toRightOf="@id/selected_boat_label"
-                android:background="@color/background_holo_light"></Spinner>
-
-
-        </RelativeLayout>
-
-    </RelativeLayout>
-
-    <TextView
-        android:id="@+id/show_hide_paths"
-        android:layout_width="267dp"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/relativeLayout_boat"
-        android:layout_alignRight="@id/relativeLayout_boat"
-        android:layout_marginRight="3dp"
-        android:clickable="true"
-        android:onClick="togglePathsView"
-        android:text="Paths"
-        android:textSize="20dp" />
-
-
-    <RelativeLayout
-        android:id="@+id/relativeLayout_paths"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
-        android:layout_alignRight="@id/relativeLayout_boat"
-        android:layout_below="@id/show_hide_paths"
-
-        android:background="@drawable/border"
-        android:orientation="vertical"
-        android:paddingLeft="10dp"
-        android:paddingRight="10dp"
-        android:paddingTop="15dp">
-
-        <RelativeLayout
-            android:id="@+id/relativeLayout_path_buttons"
-            android:layout_width="match_parent"
+            android:layout_width="214dp"
             android:layout_height="wrap_content">
 
-            <Button
-                android:id="@+id/undo_last_wp_button"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+            <RelativeLayout
+                android:id="@+id/relativeLayout_boat"
+                android:layout_width="214dp"
+                android:layout_height="wrap_content"
                 android:layout_alignParentLeft="true"
                 android:layout_alignParentTop="true"
-                android:layout_marginBottom="15dp"
-                android:background="@drawable/undo"/>
+                android:layout_marginLeft="0dp"
+                android:background="@drawable/border">
+
+                <Button
+                    android:id="@+id/connectButton"
+                    style="?android:attr/buttonStyleSmall"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentTop="true"
+                    android:layout_marginTop="0dp"
+                    android:text="Connect to boat" />
+
+                <TextView
+                    android:id="@+id/printIpAddress"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/connectButton"
+                    android:layout_gravity="center"
+                    android:layout_marginLeft="10dp"
+                    android:layout_marginRight="10dp"
+                    android:gravity="center_horizontal|center_vertical"
+                    android:textColor="@color/black" />
+
+                <RelativeLayout
+                    android:id="@+id/relativeLayout_waypoint_status"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/printIpAddress"
+                    android:layout_marginTop="10dp">
+
+                    <TextView
+                        android:id="@+id/waypoint_status_label"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="10dp"
+                        android:text="WP status:" />
+
+                    <TextView
+                        android:id="@+id/waypoint_status"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentRight="true"
+                        android:layout_marginRight="10dp"
+                        android:gravity="center" />
+                </RelativeLayout>
+
+                <RelativeLayout
+                    android:id="@+id/relativeLayout_battery"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/relativeLayout_waypoint_status"
+                    android:layout_marginLeft="10dp"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginRight="10dp"
+                    android:layout_marginBottom="10dp">
+
+                    <TextView
+                        android:id="@+id/batteryTextView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentLeft="true"
+                        android:layout_alignParentTop="true"
+                        android:text="Battery" />
+
+                    <TextView
+                        android:id="@+id/batteryVoltage"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentTop="true"
+                        android:layout_alignParentRight="true"
+                        android:text="0.0" />
+                </RelativeLayout>
+
+                <RelativeLayout
+                    android:id="@+id/relativeLayout_speed"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/relativeLayout_battery"
+                    android:layout_marginLeft="10dp">
+
+                    <TextView
+                        android:id="@+id/boat_speed_label"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentLeft="true"
+                        android:layout_centerInParent="true"
+                        android:text="Boat speed:" />
+
+                    <Spinner
+                        android:id="@+id/speed_spinner"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_toRightOf="@id/boat_speed_label"
+                        android:entries="@array/spinner_speed_entries"
+                        android:prompt="@string/speed_prompt"></Spinner>
+
+                </RelativeLayout>
+
+                <RelativeLayout
+                    android:id="@+id/relativeLayout_boat_buttons"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/relativeLayout_speed"
+                    android:layout_centerInParent="true"
+                    android:layout_marginTop="10dp">
+
+                    <Button
+                        android:id="@+id/start_button"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:layout_alignParentLeft="true"
+                        android:layout_alignParentTop="true"
+                        android:layout_marginLeft="12dp"
+                        android:background="@drawable/play_button" />
+
+                    <Button
+                        android:id="@+id/pause_button"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:layout_marginLeft="10dp"
+                        android:layout_toRightOf="@id/start_button"
+                        android:background="@drawable/pause_button" />
+
+                    <Button
+                        android:id="@+id/stop_button"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:layout_marginLeft="10dp"
+                        android:layout_marginRight="10dp"
+                        android:layout_toRightOf="@id/pause_button"
+                        android:background="@drawable/stop_button" />
+                </RelativeLayout>
+
+                <RelativeLayout
+                    android:id="@+id/relativeLayout_boat_select"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/relativeLayout_boat_buttons"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginBottom="10dp">
+
+                    <TextView
+                        android:id="@+id/selected_boat_label"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentLeft="true"
+                        android:layout_centerInParent="true"
+                        android:layout_marginLeft="10dp"
+                        android:text="Selected boat:" />
+
+                    <Spinner
+                        android:id="@+id/boat_name_spinner"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_toRightOf="@id/selected_boat_label"
+                        android:background="@color/background_holo_light"></Spinner>
 
 
-            <Button
-                android:id="@+id/remove_all_wp_button"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_alignParentTop="true"
-                android:layout_centerInParent="true"
-                android:background="@drawable/delete"/>
+                </RelativeLayout>
 
-            <Button
-                android:id="@+id/drop_wp_button"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:layout_alignParentTop="true"
-                android:layout_alignParentRight="true"
-                android:background="@drawable/drop_wp"/>
+            </RelativeLayout>
 
-            <Button
-                android:id="@+id/path_button"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+            <TextView
+                android:id="@+id/show_hide_paths"
+                android:layout_width="267dp"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/relativeLayout_boat"
+                android:layout_alignRight="@id/relativeLayout_boat"
+                android:layout_marginRight="3dp"
+                android:clickable="true"
+                android:onClick="togglePathsView"
+                android:text="Paths"
+                android:textSize="20dp" />
+
+
+            <RelativeLayout
+                android:id="@+id/relativeLayout_paths"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/show_hide_paths"
+                android:layout_alignRight="@id/relativeLayout_boat"
                 android:layout_alignParentLeft="true"
-                android:layout_below="@id/undo_last_wp_button"
-                android:layout_marginBottom="15dp"
-                android:background="@drawable/polyline"/>
 
-            <Button
-                android:id="@+id/spiral_button"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_below="@id/undo_last_wp_button"
-                android:layout_centerInParent="true"
-                android:background="@drawable/spiral"/>
+                android:background="@drawable/border"
+                android:orientation="vertical"
+                android:paddingLeft="10dp"
+                android:paddingTop="15dp"
+                android:paddingRight="10dp">
 
-            <Button
-                android:id="@+id/lawnmower_button"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_below="@id/undo_last_wp_button"
-                android:layout_alignParentRight="true"
-                android:layout_marginRight="5dp"
-                android:layout_marginBottom="15dp"
-                android:background="@drawable/lawnmower"/>
+                <RelativeLayout
+                    android:id="@+id/relativeLayout_path_buttons"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
 
-            <Button
-                android:id="@+id/reverse_order_button"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:layout_below="@id/path_button"
+                    <Button
+                        android:id="@+id/undo_last_wp_button"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:layout_alignParentLeft="true"
+                        android:layout_alignParentTop="true"
+                        android:layout_marginBottom="15dp"
+                        android:background="@drawable/undo" />
+
+
+                    <Button
+                        android:id="@+id/remove_all_wp_button"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:layout_alignParentTop="true"
+                        android:layout_centerInParent="true"
+                        android:background="@drawable/delete" />
+
+                    <Button
+                        android:id="@+id/drop_wp_button"
+                        android:layout_width="50dp"
+                        android:layout_height="50dp"
+                        android:layout_alignParentTop="true"
+                        android:layout_alignParentRight="true"
+                        android:background="@drawable/drop_wp" />
+
+                    <Button
+                        android:id="@+id/path_button"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:layout_below="@id/undo_last_wp_button"
+                        android:layout_alignParentLeft="true"
+                        android:layout_marginBottom="15dp"
+                        android:background="@drawable/polyline" />
+
+                    <Button
+                        android:id="@+id/spiral_button"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:layout_below="@id/undo_last_wp_button"
+                        android:layout_centerInParent="true"
+                        android:background="@drawable/spiral" />
+
+                    <Button
+                        android:id="@+id/lawnmower_button"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:layout_below="@id/undo_last_wp_button"
+                        android:layout_alignParentRight="true"
+                        android:layout_marginRight="5dp"
+                        android:layout_marginBottom="15dp"
+                        android:background="@drawable/lawnmower" />
+
+                    <Button
+                        android:id="@+id/reverse_order_button"
+                        android:layout_width="50dp"
+                        android:layout_height="50dp"
+                        android:layout_below="@id/path_button"
+                        android:layout_alignParentLeft="true"
+                        android:background="@drawable/reverse_order" />
+
+                    <Button
+                        android:id="@+id/simple_path_button"
+                        android:layout_width="100dp"
+                        android:layout_height="50dp"
+                        android:layout_below="@id/lawnmower_button"
+                        android:layout_alignParentRight="true"
+                        android:background="@drawable/simple_path_button" />
+
+                </RelativeLayout>
+
+                <RelativeLayout
+                    android:id="@+id/relativeLayout_path_length"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/relativeLayout_path_buttons"
+                    android:layout_marginTop="10dp">
+
+                    <TextView
+                        android:id="@+id/path_length_label"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentLeft="true"
+                        android:text="Path length:" />
+
+                    <TextView
+                        android:id="@+id/path_length_value"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentRight="true"
+                        android:text="0" />
+                </RelativeLayout>
+
+                <RelativeLayout
+                    android:id="@+id/relativeLayout_transect"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/relativeLayout_path_length">
+
+                    <TextView
+                        android:id="@+id/transect_distance_label"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentLeft="true"
+                        android:layout_centerInParent="true"
+                        android:gravity="center"
+                        android:text="Transect dist.:" />
+
+                    <EditText
+                        android:id="@+id/transect_distance_input"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentRight="true"
+                        android:gravity="center"
+                        android:inputType="number"
+                        android:text="20" />
+
+                </RelativeLayout>
+            </RelativeLayout>
+
+            <TextView
+                android:id="@+id/show_hide_pump"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/relativeLayout_paths"
+                android:layout_alignRight="@id/relativeLayout_boat"
+                android:clickable="true"
+                android:onClick="togglePumpView"
+                android:text="Peristaltic Pump"
+                android:textSize="20dp" />
+
+            <RelativeLayout
+                android:id="@+id/relativeLayout_pump"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/show_hide_pump"
+                android:layout_alignRight="@id/relativeLayout_boat"
                 android:layout_alignParentLeft="true"
-                android:background="@drawable/reverse_order"/>
+                android:background="@drawable/border">
 
-            <Button
-                android:id="@+id/simple_path_button"
-                android:layout_width="100dp"
-                android:layout_height="50dp"
-                android:background="@drawable/simple_path_button"
-                android:layout_below="@id/lawnmower_button"
-                android:layout_alignParentRight="true"/>
+                <Button
+                    android:id="@+id/pump_on_button"
+                    android:layout_width="42dp"
+                    android:layout_height="50dp"
+                    android:layout_alignParentLeft="true"
+                    android:layout_alignParentTop="true"
+                    android:layout_marginLeft="5dp"
+                    android:layout_marginTop="5dp"
+                    android:background="@drawable/play_button" />
 
-        </RelativeLayout>
+                <Button
+                    android:id="@+id/pump_off_button"
+                    android:layout_width="42dp"
+                    android:layout_height="50dp"
+                    android:layout_alignParentTop="true"
+                    android:layout_marginLeft="10dp"
+                    android:layout_marginTop="5dp"
+                    android:layout_toRightOf="@id/pump_on_button"
+                    android:background="@drawable/stop_button" />
 
-        <RelativeLayout
-            android:id="@+id/relativeLayout_path_length"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:layout_below="@id/relativeLayout_path_buttons"
-            >
+                <TextView
+                    android:id="@+id/pump_is_on_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentTop="true"
+                    android:layout_marginLeft="10dp"
+                    android:layout_marginTop="5dp"
+                    android:layout_toRightOf="@id/pump_off_button"
+                    android:text=""
+                    android:textSize="20dp" />
+
+                <Spinner
+                    android:id="@+id/peristaltic_pump_mode_spinner"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/pump_is_on_text"
+                    android:layout_toRightOf="@id/pump_off_button"
+                    android:entries="@array/spinner_pump_mode_entries"
+                    android:prompt="@string/speed_prompt"></Spinner>
+
+                <TextView
+                    android:id="@+id/peristaltic_hm_measurement_counter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/pump_off_button"
+                    android:layout_alignParentLeft="true"
+                    android:layout_marginLeft="5dp"
+                    android:text=""
+
+
+                    />
+
+
+            </RelativeLayout>
 
             <TextView
-                android:id="@+id/path_length_label"
+                android:id="@+id/show_hide_sampler"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/relativeLayout_pump"
+                android:layout_alignRight="@id/relativeLayout_boat"
+                android:clickable="true"
+                android:onClick="toggleSamplerView"
+                android:text="Platypus Sampler"
+                android:textSize="20dp" />
+
+            <RelativeLayout
+                android:id="@+id/relativeLayout_sampler"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_below="@id/show_hide_sampler"
+                android:layout_alignRight="@id/relativeLayout_boat"
                 android:layout_alignParentLeft="true"
-                android:text="Path length:"/>
+                android:layout_alignParentBottom="true"
+                android:background="@drawable/border">
 
-            <TextView
-                android:id="@+id/path_length_value"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentRight="true"
-                android:text="0"/>
+                <RelativeLayout
+                    android:id="@+id/relativeLayout_sampler_jar1"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentLeft="true"
+                    android:layout_alignParentTop="true"
+                    android:layout_marginLeft="10dp"
+                    android:layout_marginTop="10dp">
+
+                    <Button
+                        android:id="@+id/jar1_button"
+                        android:layout_width="42dp"
+                        android:layout_height="50dp"
+                        android:background="@drawable/jar_1" />
+
+                    <TextView
+                        android:id="@+id/jar1_text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_below="@id/jar1_button"
+                        android:layout_centerHorizontal="true" />
+
+                </RelativeLayout>
+
+                <RelativeLayout
+                    android:id="@+id/relativeLayout_sampler_jar2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentTop="true"
+                    android:layout_centerInParent="true"
+                    android:layout_marginTop="10dp">
+
+                    <Button
+                        android:id="@+id/jar2_button"
+                        android:layout_width="42dp"
+                        android:layout_height="50dp"
+                        android:background="@drawable/jar_2" />
+
+                    <TextView
+                        android:id="@+id/jar2_text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_below="@id/jar2_button"
+                        android:layout_centerHorizontal="true" />
+
+                </RelativeLayout>
+
+                <RelativeLayout
+                    android:id="@+id/relativeLayout_sampler_jar3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentTop="true"
+                    android:layout_alignParentRight="true"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginRight="10dp">
+
+
+                    <Button
+                        android:id="@+id/jar3_button"
+                        android:layout_width="42dp"
+                        android:layout_height="50dp"
+                        android:background="@drawable/jar_3" />
+
+                    <TextView
+                        android:id="@+id/jar3_text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_below="@id/jar3_button"
+                        android:layout_centerHorizontal="true" />
+
+                </RelativeLayout>
+
+                <RelativeLayout
+                    android:id="@+id/relativeLayout_sampler_jar4"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/relativeLayout_sampler_jar1"
+                    android:layout_alignParentLeft="true"
+                    android:layout_marginLeft="10dp">
+
+                    <Button
+                        android:id="@+id/jar4_button"
+                        android:layout_width="42dp"
+                        android:layout_height="50dp"
+                        android:background="@drawable/jar_4" />
+
+                    <TextView
+                        android:id="@+id/jar4_text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_below="@id/jar4_button"
+                        android:layout_centerHorizontal="true" />
+                </RelativeLayout>
+
+
+                <Button
+                    android:id="@+id/sampler_stop_all_button"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_below="@id/relativeLayout_sampler_jar2"
+                    android:layout_centerInParent="true"
+                    android:layout_marginTop="5dp"
+                    android:background="@drawable/stop_button" />
+
+
+                <Button
+                    android:id="@+id/sampler_reset_button"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_below="@id/relativeLayout_sampler_jar3"
+                    android:layout_alignParentRight="true"
+                    android:layout_marginTop="5dp"
+                    android:layout_marginRight="12dp"
+                    android:background="@drawable/reset" />
+
+                <Switch
+                    android:id="@+id/switch_active_sampler"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/relativeLayout_sampler_jar4"
+                    android:layout_alignParentLeft="true"
+                    android:layout_marginLeft="10dp"
+                    android:text="System active: " />
+
+
+            </RelativeLayout>
         </RelativeLayout>
-
-        <RelativeLayout
-            android:id="@+id/relativeLayout_transect"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/relativeLayout_path_length"
-            >
-
-            <TextView
-                android:id="@+id/transect_distance_label"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentLeft="true"
-                android:layout_centerInParent="true"
-                android:gravity="center"
-                android:text="Transect dist.:"/>
-
-            <EditText
-                android:id="@+id/transect_distance_input"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentRight="true"
-                android:gravity="center"
-                android:inputType="number"
-                android:text="20"
-                />
-
-        </RelativeLayout>
-    </RelativeLayout>
-
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/relativeLayout_paths"
-        android:layout_alignRight="@id/relativeLayout_boat"
-        android:text="Peristaltic Pump"
-        android:textSize="20dp"
-        android:id="@+id/show_hide_pump"
-        android:clickable="true"
-        android:onClick="togglePumpView"
-        />
-
-    <RelativeLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/relativeLayout_pump"
-        android:layout_below="@id/show_hide_pump"
-        android:layout_alignRight="@id/relativeLayout_boat"
-        android:layout_alignParentLeft="true"
-        android:background="@drawable/border"
-        >
-
-        <Button
-            android:id="@+id/pump_on_button"
-            android:layout_width="42dp"
-            android:layout_height="50dp"
-            android:background="@drawable/play_button"
-            android:layout_alignParentLeft="true"
-            android:layout_alignParentTop="true"
-            android:layout_marginTop="5dp"
-            android:layout_marginLeft="5dp"
-            />
-        <Button
-            android:id="@+id/pump_off_button"
-            android:layout_width="42dp"
-            android:layout_height="50dp"
-            android:layout_marginLeft="10dp"
-            android:background="@drawable/stop_button"
-            android:layout_toRightOf="@id/pump_on_button"
-            android:layout_alignParentTop="true"
-            android:layout_marginTop="5dp"
-            />
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_toRightOf="@id/pump_off_button"
-            android:layout_marginLeft="10dp"
-            android:layout_alignParentTop="true"
-            android:textSize="20dp"
-            android:id="@+id/pump_is_on_text"
-            android:text=""
-            android:layout_marginTop="5dp"
-            />
-
-        <Spinner
-            android:id="@+id/peristaltic_pump_mode_spinner"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/pump_is_on_text"
-            android:layout_toRightOf="@id/pump_off_button"
-            android:entries="@array/spinner_pump_mode_entries"
-            android:prompt="@string/speed_prompt">
-        </Spinner>
-
-        <TextView
-            android:id="@+id/peristaltic_hm_measurement_counter"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/pump_off_button"
-            android:layout_alignParentLeft="true"
-            android:layout_marginLeft="5dp"
-            android:text=""
-
-
-            />
-
-
-    </RelativeLayout>
-
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/relativeLayout_pump"
-        android:layout_alignRight="@id/relativeLayout_boat"
-        android:text="Platypus Sampler"
-        android:textSize="20dp"
-        android:id="@+id/show_hide_sampler"
-        android:clickable="true"
-        android:onClick="toggleSamplerView"
-        />
-
-    <RelativeLayout
-        android:id="@+id/relativeLayout_sampler"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:background="@drawable/border"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentBottom="true"
-        android:layout_alignRight="@id/relativeLayout_boat"
-        android:layout_below="@id/show_hide_sampler"
-        >
-
-        <RelativeLayout
-            android:id="@+id/relativeLayout_sampler_jar1"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentTop="true"
-            android:layout_alignParentLeft="true"
-            android:layout_marginLeft="10dp"
-            android:layout_marginTop="10dp">
-
-            <Button
-                android:id="@+id/jar1_button"
-                android:layout_width="42dp"
-                android:layout_height="50dp"
-                android:background="@drawable/jar_1"
-                />
-
-            <TextView
-                android:id="@+id/jar1_text"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_below="@id/jar1_button"
-                android:layout_centerHorizontal="true"
-                />
-
-        </RelativeLayout>
-
-        <RelativeLayout
-            android:id="@+id/relativeLayout_sampler_jar2"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentTop="true"
-            android:layout_centerInParent="true"
-            android:layout_marginTop="10dp">
-
-            <Button
-                android:id="@+id/jar2_button"
-                android:layout_width="42dp"
-                android:layout_height="50dp"
-                android:background="@drawable/jar_2"/>
-            <TextView
-                android:id="@+id/jar2_text"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_below="@id/jar2_button"
-                android:layout_centerHorizontal="true"
-                />
-
-        </RelativeLayout>
-
-        <RelativeLayout
-            android:id="@+id/relativeLayout_sampler_jar3"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentTop="true"
-            android:layout_alignParentRight="true"
-            android:layout_marginRight="10dp"
-            android:layout_marginTop="10dp">
-
-
-            <Button
-                android:id="@+id/jar3_button"
-                android:layout_width="42dp"
-                android:layout_height="50dp"
-                android:background="@drawable/jar_3"
-                />
-            <TextView
-                android:id="@+id/jar3_text"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_below="@id/jar3_button"
-                android:layout_centerHorizontal="true"
-                />
-
-        </RelativeLayout>
-
-        <RelativeLayout
-            android:id="@+id/relativeLayout_sampler_jar4"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/relativeLayout_sampler_jar1"
-            android:layout_alignParentLeft="true"
-            android:layout_marginLeft="10dp"
-            >
-
-            <Button
-                android:id="@+id/jar4_button"
-                android:layout_width="42dp"
-                android:layout_height="50dp"
-                android:background="@drawable/jar_4"/>
-            <TextView
-                android:id="@+id/jar4_text"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_below="@id/jar4_button"
-                android:layout_centerHorizontal="true"
-                />
-        </RelativeLayout>
-
-
-        <Button
-            android:id="@+id/sampler_stop_all_button"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_centerInParent="true"
-            android:layout_below="@id/relativeLayout_sampler_jar2"
-            android:background="@drawable/stop_button"
-            android:layout_marginTop="5dp"/>
-
-
-        <Button
-            android:id="@+id/sampler_reset_button"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_alignParentRight="true"
-            android:layout_below="@id/relativeLayout_sampler_jar3"
-            android:layout_marginRight="12dp"
-            android:layout_marginTop="5dp"
-            android:background="@drawable/reset"/>
-
-        <Switch
-            android:id="@+id/switch_active_sampler"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/relativeLayout_sampler_jar4"
-            android:layout_alignParentLeft="true"
-            android:layout_marginLeft="10dp"
-            android:text="System active: "/>
-
-
-
-    </RelativeLayout>
-
+    </ScrollView>
     <RelativeLayout
         android:id="@+id/relativeLayout_map"
         android:layout_width="1063dp"
         android:layout_height="match_parent"
         android:layout_marginLeft="6dp"
-        android:layout_toRightOf="@+id/relativeLayout_boat"
+        android:layout_toRightOf="@+id/scroll"
         android:layout_weight="0.5">
 
 
