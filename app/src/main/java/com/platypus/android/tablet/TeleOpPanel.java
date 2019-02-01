@@ -837,7 +837,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 		protected void onCreate(final Bundle savedInstanceState)
 		{
 				super.onCreate(savedInstanceState);
-				Mapbox.getInstance(getApplicationContext(), "pk.eyJ1IjoiZGNvcnNpIiwiYSI6ImNqcXdhcWFraTAwMnczeHM1bnh6ZGdmMnkifQ.Q9MlWkL7sGwfSaRwfdvqiA");
+				Mapbox.getInstance(getApplicationContext(), "pk.eyJ1IjoiZGNvcnNpIiwiYSI6ImNqcmh4azNocTIyb3Q0YW1sdmN0ZWU4ZHYifQ.eaqQfQhUFKafqv6r-3u7Gg");
 				this.setContentView(R.layout.tabletlayoutswitch);
 				sensor_stuff = new SensorStuff(this);
 				saved_waypoint_stuff = new SavedWaypointsStuff(context);
@@ -2761,6 +2761,7 @@ public class TeleOpPanel extends Activity implements SensorEventListener
 												rPID[0] = Double.parseDouble(sharedPref.getString(SettingsActivity.KEY_PREF_PID_RUDDER_P, "1.0"));
 												rPID[1] = Double.parseDouble(sharedPref.getString(SettingsActivity.KEY_PREF_PID_RUDDER_I, "0"));
 												rPID[2] = Double.parseDouble(sharedPref.getString(SettingsActivity.KEY_PREF_PID_RUDDER_D, "0.2"));
+
 												break;
 
 										default:
